@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { useFoodLogs } from '../hooks/useFoodLogs'
+import { useMealTemplates } from '../hooks/useMealTemplates'
 import MealSection from '../components/FoodLog/MealSection'
 import CalorieBar from '../components/Dashboard/CalorieBar'
 
@@ -19,6 +20,7 @@ export default function FoodLog({ user, profile }) {
   const [dayOffset, setDayOffset] = useState(0)
   const date = dateStr(dayOffset)
   const { logs, totals, addLog, deleteLog } = useFoodLogs(user?.id, date)
+  const { saveTemplate } = useMealTemplates(user?.id)
 
   const targetCal = profile?.target_calories ?? 2500
 
@@ -69,6 +71,7 @@ export default function FoodLog({ user, profile }) {
           logs={logs}
           onAdd={entry => addLog(entry)}
           onDelete={id => deleteLog(id)}
+          onSaveFavorite={tpl => saveTemplate(tpl)}
         />
       ))}
     </div>

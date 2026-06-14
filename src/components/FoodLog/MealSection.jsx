@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Plus, Trash2, ChevronDown, ChevronUp } from 'lucide-react'
+import { Plus, Trash2, ChevronDown, ChevronUp, Star, Check } from 'lucide-react'
 import FoodSearch from './FoodSearch'
 
 const MEAL_COLORS = {
@@ -16,12 +16,27 @@ const MEAL_LABELS = {
   snack:     'Collation',
 }
 
-export default function MealSection({ mealType, logs, onAdd, onDelete }) {
+export default function MealSection({ mealType, logs, onAdd, onDelete, onSaveFavorite }) {
   const [open, setOpen] = useState(true)
   const [showSearch, setShowSearch] = useState(false)
+  const [saved, setSaved] = useState(false)
 
   const mealLogs = logs.filter(l => l.meal_type === mealType)
   const totalCal = mealLogs.reduce((s, l) => s + (l.calories ?? 0), 0)
+
+  async function handleSaveFavorite(e) {
+    e.stopPropagation()
+    if (!mealLogs.length || !onSaveFavorite) return
+    const name = window.prompt('Nom du favori :', MEAL_LABELS[mealType])
+    if (!name) return
+    const items = mealLogs.map(l => ({
+      food_name: l.food_name, brand: l.brand ?? '', quantity_g: l.quantity_g,
+      calories: l.calories, protein_g: l.protein_g, carbs_g: l.carbs_g,
+      fat_g: l.fat_g, fiber_g: l.fiber_g ?? 0, source: l.source ?? null,
+    }))
+    const { error } = await onSaveFavorite({ name, meal_type: mealType, items })
+    if (!error) { setSaved(true); setTimeout(() => setSaved(false), 2000) }
+  }
 
   return (
     <div className="card">
@@ -33,6 +48,15 @@ export default function MealSection({ mealType, logs, onAdd, onDelete }) {
           </span>
         </div>
         <div className="flex items-center gap-2">
+          {mealLogs.length > 0 && onSaveFavorite && (
+            <button
+              onClick={handleSaveFavorite}
+              title="Enregistrer ce repas comme favori"
+              className={`transition-colors p-1 ${saved ? 'text-green-400' : 'text-slate-400 hover:text-yellow-400'}`}
+            >
+              {saved ? <Check size={17} /> : <Star size={17} />}
+            </button>
+          )}
           <button
             onClick={e => { e.stopPropagation(); setShowSearch(true) }}
             className="text-slate-400 hover:text-green-400 transition-colors p-1"
