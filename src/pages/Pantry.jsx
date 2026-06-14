@@ -1,9 +1,10 @@
 import { useState } from 'react'
-import { Plus, Trash2, Utensils, ReceiptText, Boxes, X, Check } from 'lucide-react'
+import { Plus, Trash2, Utensils, ReceiptText, Boxes, X, Check, ChefHat } from 'lucide-react'
 import { useFoodLogs } from '../hooks/useFoodLogs'
 import { todayStr, scaleNutrients } from '../lib/nutrition'
 import { matchFoodByName } from '../lib/foodMatch'
 import { useLocalPantry } from '../components/pantryStore'
+import { suggestRecipes } from '../components/recipeSuggest'
 import DriveImport from '../components/DriveImport'
 
 const MEALS = { breakfast: 'Petit-déj', lunch: 'Déjeuner', dinner: 'Dîner', snack: 'Collation' }
@@ -48,6 +49,8 @@ export default function Pantry({ user }) {
   const [importing, setImporting] = useState(false)
   const [eating, setEating] = useState(null)
   const [msg, setMsg] = useState('')
+
+  const recipes = suggestRecipes(items.map(i => i.label)).slice(0, 4)
 
   async function handleAdd(e) {
     e.preventDefault()
@@ -94,6 +97,28 @@ export default function Pantry({ user }) {
         </button>
         {msg && <p className={`text-xs ${msg.startsWith('✓') ? 'text-green-400' : 'text-red-400'}`}>{msg}</p>}
       </form>
+
+      {recipes.length > 0 && (
+        <div className="card">
+          <div className="flex items-center gap-2 mb-3">
+            <ChefHat size={15} className="text-green-400" />
+            <p className="text-sm text-slate-300 font-medium">Que cuisiner avec ton stock ?</p>
+          </div>
+          <div className="space-y-2">
+            {recipes.map(r => (
+              <div key={r.name} className="flex items-center justify-between gap-2 bg-slate-800 rounded-xl px-3 py-2">
+                <div className="min-w-0">
+                  <p className="text-sm truncate">{r.name}</p>
+                  <p className="text-xs text-slate-500">{r.tag}</p>
+                </div>
+                <span className={`text-[10px] px-2 py-0.5 rounded-full shrink-0 ${r.ready ? 'bg-green-500/15 text-green-400' : 'bg-slate-700 text-slate-400'}`}>
+                  {r.ready ? 'Prêt' : `il manque ${r.key.length - r.haveKey.length}`}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {items.length === 0 ? (
         <div className="card text-center text-slate-500 text-sm py-8">
