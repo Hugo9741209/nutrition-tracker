@@ -1,6 +1,7 @@
 import { useState } from 'react'
-import { X, ClipboardPaste, Check, ShoppingCart } from 'lucide-react'
+import { X, ClipboardPaste, Check, ShoppingCart, Loader2 } from 'lucide-react'
 import { parseDriveOrder } from './driveParser'
+import { matchFoodByName } from '../lib/foodMatch'
 
 // Import d'un ticket / confirmation de commande Drive Super U → liste de courses.
 // L'utilisateur colle le texte de l'email ; on reconnaît les produits côté front.
@@ -8,11 +9,19 @@ export default function DriveImport({ onClose, onConfirm }) {
   const [raw, setRaw] = useState('')
   const [items, setItems] = useState(null)      // null tant qu'on n'a pas parsé
   const [picked, setPicked] = useState({})       // index -> bool
+  const [matching, setMatching] = useState(false)
 
-  function handleParse() {
+  async function handleParse() {
     const parsed = parseDriveOrder(raw)
     setItems(parsed)
     setPicked(Object.fromEntries(parsed.map((_, i) => [i, true])))
+    // Reconnaissance nutritionnelle CIQUAL (backend) — informatif, n'affecte pas la liste.
+    setMatching(true)
+    const enriched = await Promise.all(parsed.map(async (it) => {
+      try { return { ...it, match: await matchFoodByName(it.name) } } catch { return it }
+    }))
+    setItems(enriched)
+    setMatching(false)
   }
 
   const selected = items ? items.filter((_, i) => picked[i]) : []
@@ -60,7 +69,10 @@ export default function DriveImport({ onClose, onConfirm }) {
             </div>
           ) : (
             <>
-              <p className="text-xs text-slate-400">{selected.length}/{items.length} produit(s) sélectionné(s) — décoche ce que tu ne veux pas.</p>
+              <p className="text-xs text-slate-400 flex items-center gap-2">
+                {selected.length}/{items.length} produit(s) sélectionné(s).
+                {matching && <span className="flex items-center gap-1 text-slate-500"><Loader2 size={12} className="animate-spin" /> reconnaissance…</span>}
+              </p>
               <div className="divide-y divide-slate-800">
                 {items.map((it, i) => (
                   <button
@@ -73,7 +85,12 @@ export default function DriveImport({ onClose, onConfirm }) {
                     </span>
                     <span className="flex-1 min-w-0">
                       <span className="text-sm block truncate">{it.name}</span>
-                      {it.qty && <span className="text-xs text-slate-500">{it.qty}</span>}
+                      <span className="text-xs text-slate-500">
+                        {it.qty && <span>{it.qty}</span>}
+                        {it.match
+                          ? <span className="text-green-400">{it.qty ? ' · ' : ''}✓ {it.match.match.food_name} ({it.match.match.per100g.calories} kcal/100g)</span>
+                          : !matching && <span className="text-slate-600">{it.qty ? ' · ' : ''}non reconnu</span>}
+                      </span>
                     </span>
                   </button>
                 ))}
