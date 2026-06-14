@@ -20,7 +20,7 @@ export function calcTDEE({ weight_kg, height_cm, age, gender, activity_level }) 
 // Honnêteté scientifique : Mifflin-St Jeor est précise à ±10% de la dépense réelle.
 // On ne doit JAMAIS présenter le TDEE comme un chiffre exact à l'unité.
 // Renvoie la fourchette honnête à afficher autour d'un TDEE.
-export const TDEE_MARGIN = 0.10 // ±10%
+const TDEE_MARGIN = 0.10 // ±10% (interne : l'affichage g/kg & repères vit dans nutritionDisplay côté front)
 export function tdeeRange(tdee) {
   return {
     low:  Math.round(tdee * (1 - TDEE_MARGIN)),
@@ -58,26 +58,9 @@ export function calcMacros(targetCalories, goal, weight_kg) {
   return { protein_g, carbs_g, fat_g }
 }
 
-// --- Cadrage sportif d'endurance (g/kg de poids corporel) ---
-// Le g/kg est la métrique que les coureurs comprennent, pas le gramme brut.
-
-// Protéines : 1,5–1,7 g/kg pour un athlète d'endurance (zone repère).
-export const PROTEIN_ENDURANCE_RANGE = { min: 1.5, max: 1.7 }
-
-// Glucides (carburant) : ACSM 5–7 g/kg jour modéré, 6–10 g/kg jour d'entraînement.
-export const CARBS_REST_RANGE = { min: 5, max: 7 }   // jour repos / léger
-export const CARBS_TRAIN_RANGE = { min: 6, max: 10 }  // jour d'entraînement
-
-// Convertit une quantité de macro (g) en g/kg de poids corporel.
-export function perKg(grams, weight_kg) {
-  if (!weight_kg) return 0
-  return Math.round((grams / weight_kg) * 100) / 100 // 2 décimales
-}
-
-// Indique si une valeur g/kg tombe dans une fourchette repère.
-export function inRange(value, { min, max }) {
-  return value >= min && value <= max
-}
+// NB : les repères g/kg endurance (PROTEIN_ENDURANCE_RANGE, CARBS_*, perKg, inRange)
+// sont des helpers d'AFFICHAGE → ils vivent côté front dans components/nutritionDisplay.js
+// (cf. CONTRAT_AGENTS.md). Le backend n'expose ici que calcul + sécurité.
 
 export const ACTIVITY_LABELS = {
   sedentary:    'Sédentaire (peu ou pas de sport)',
