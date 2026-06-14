@@ -7,6 +7,8 @@ import { useWeightLogs } from '../hooks/useWeightLogs'
 import CalorieBar from '../components/Dashboard/CalorieBar'
 import MacroRings from '../components/Dashboard/MacroRings'
 import RecalibrateBanner from '../components/Dashboard/RecalibrateBanner'
+import ScoreGauge from '../components/Dashboard/ScoreGauge'
+import { dailyBalanceScore } from '../lib/score'
 import { todayStr, GOAL_LABELS } from '../lib/nutrition'
 
 const CustomTooltip = ({ active, payload, label }) => {
@@ -64,6 +66,15 @@ export default function Dashboard({ user, profile }) {
           </Link>
         </div>
       )}
+
+      {/* Score d'équilibre du jour */}
+      {(() => {
+        const { score, label } = dailyBalanceScore({
+          totals,
+          targets: { calories: profile?.target_calories, protein_g: profile?.target_protein_g },
+        })
+        return <ScoreGauge score={score} label={label} />
+      })()}
 
       {/* Calories */}
       <CalorieBar consumed={totals.calories} target={targetCal} />
