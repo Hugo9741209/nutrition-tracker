@@ -6,6 +6,7 @@ import { useFoodLogs, useFoodHistory } from '../hooks/useFoodLogs'
 import { useWeightLogs } from '../hooks/useWeightLogs'
 import CalorieBar from '../components/Dashboard/CalorieBar'
 import MacroRings from '../components/Dashboard/MacroRings'
+import RecalibrateBanner from '../components/Dashboard/RecalibrateBanner'
 import { todayStr, GOAL_LABELS } from '../lib/nutrition'
 
 const CustomTooltip = ({ active, payload, label }) => {
@@ -66,6 +67,9 @@ export default function Dashboard({ user, profile }) {
 
       {/* Calories */}
       <CalorieBar consumed={totals.calories} target={targetCal} />
+
+      {/* Rappel de recalibrage si l'objectif est ancien ou le poids a dérivé */}
+      <RecalibrateBanner profile={profile} latestWeight={latest?.weight_kg} />
 
       {/* Type de jour — change la cible glucides de référence (affichage uniquement) */}
       <div className="flex items-center gap-2">
