@@ -68,6 +68,15 @@ Exemple — sortie du rapport TDEE (cf. backend) :
 Si le backend modifie cette forme → il prévient le frontend (et ce fichier est mis à jour).
 Si le frontend a besoin d'un champ en plus → il le demande au backend.
 
+### ⚠️ Changement de contrat (2026-06-14) — `useProfile.saveProfile`
+`saveProfile(updates)` applique désormais le garde-fou §8 : si `updates.target_calories`
+décrit un objectif dangereux, **rien n'est persisté** et la fonction renvoie :
+```js
+{ data: null, error: { code: 'UNSAFE_GOAL', message: '…', violations: [{code, message}] } }
+```
+→ Côté front : tester `error?.code === 'UNSAFE_GOAL'`, garder le `SafetyBanner` affiché et
+ne PAS considérer l'objectif comme enregistré. Les autres erreurs Supabase restent inchangées.
+
 ---
 
 ## 4. Aspect sportif — ARBITRAGE ACTÉ (Hugo, 2026-06-14)
