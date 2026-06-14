@@ -12,9 +12,17 @@ const ACTIVITY_MULTIPLIERS = {
   extra_active: 1.9,   // 2x/jour ou travail physique
 }
 
-// TDEE = dépense calorique journalière totale
+// TDEE = dépense calorique journalière totale (Mifflin uniquement)
 export function calcTDEE({ weight_kg, height_cm, age, gender, activity_level }) {
   return Math.round(calcBMR({ weight_kg, height_cm, age, gender }) * (ACTIVITY_MULTIPLIERS[activity_level] ?? 1.55))
+}
+
+// TDEE method-aware : Katch-McArdle si % masse grasse fiable, sinon Mifflin.
+// computeBMR (défini plus bas) choisit la méthode ET l'incertitude. À privilégier
+// dès qu'on dispose éventuellement de body_fat_pct (ex. garde-fous, rapport TDEE).
+export function tdeeFromProfile({ weight_kg, height_cm, age, gender, activity_level, body_fat_pct }) {
+  const { value: bmr } = computeBMR({ weight_kg, height_cm, age, gender, body_fat_pct })
+  return Math.round(bmr * (ACTIVITY_MULTIPLIERS[activity_level] ?? 1.55))
 }
 
 // Honnêteté scientifique : Mifflin-St Jeor est précise à ±10% de la dépense réelle.

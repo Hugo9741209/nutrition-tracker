@@ -12,6 +12,7 @@ CREATE TABLE IF NOT EXISTS public.profiles (
   height_cm NUMERIC DEFAULT 175,
   current_weight_kg NUMERIC,
   target_weight_kg NUMERIC,
+  body_fat_pct NUMERIC,  -- optionnel : si renseigné, active le BMR Katch-McArdle (plus précis pour profils musclés)
   activity_level TEXT DEFAULT 'very_active',
   goal TEXT DEFAULT 'maintain',
   target_calories INTEGER,

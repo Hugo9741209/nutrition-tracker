@@ -6,6 +6,7 @@ import {
   calcBMRKatch,
   computeBMR,
   calcTDEE,
+  tdeeFromProfile,
   calcBMI,
   calcTargetCalories,
   calcMacros,
@@ -51,6 +52,17 @@ describe('calcTDEE', () => {
   })
   it('multiplicateur par défaut 1,55 si niveau inconnu', () => {
     expect(calcTDEE({ weight_kg: 80, height_cm: 180, age: 20, gender: 'male', activity_level: 'inconnu' })).toBe(Math.round(1830 * 1.55))
+  })
+})
+
+describe('tdeeFromProfile : method-aware', () => {
+  const base = { weight_kg: 80, height_cm: 180, age: 20, gender: 'male', activity_level: 'very_active' }
+  it('sans % masse grasse → Mifflin (= calcTDEE)', () => {
+    expect(tdeeFromProfile(base)).toBe(calcTDEE(base))
+  })
+  it('avec % masse grasse → Katch-McArdle (BMR différent de Mifflin)', () => {
+    // Katch BMR ≈ 1838,8 × 1,725 ≈ 3172, vs Mifflin 1830 × 1,725 = 3157
+    expect(tdeeFromProfile({ ...base, body_fat_pct: 15 })).toBe(3172)
   })
 })
 

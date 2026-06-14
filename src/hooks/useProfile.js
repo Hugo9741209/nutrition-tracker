@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
-import { calcTDEE, checkGoalSafety } from '../lib/nutrition'
+import { tdeeFromProfile, checkGoalSafety } from '../lib/nutrition'
 
 export function useProfile(userId) {
   const [profile, setProfile] = useState(null)
@@ -27,12 +27,13 @@ export function useProfile(userId) {
       const weight_kg = rec.current_weight_kg
       const hasBase = weight_kg && rec.height_cm && rec.age != null && rec.gender
       if (hasBase) {
-        const tdee = calcTDEE({
+        const tdee = tdeeFromProfile({
           weight_kg,
           height_cm: rec.height_cm,
           age: rec.age,
           gender: rec.gender,
           activity_level: rec.activity_level,
+          body_fat_pct: rec.body_fat_pct, // active Katch-McArdle si renseigné
         })
         const { ok, violations } = checkGoalSafety({
           tdee,
