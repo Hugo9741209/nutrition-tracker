@@ -2,7 +2,12 @@ import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, ReferenceLin
 import { TrendingUp, TrendingDown, Minus, Target, Flame } from 'lucide-react'
 import { useFoodHistory } from '../hooks/useFoodLogs'
 import { useWeightLogs } from '../hooks/useWeightLogs'
+import { projectWeightGoal } from '../lib/insights'
 import { perKg, inRange, PROTEIN_ENDURANCE_RANGE, CARBS_REST_RANGE } from '../components/nutritionDisplay'
+
+function fmtDate(iso) {
+  return new Date(iso + 'T00:00:00').toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })
+}
 
 const TolPct = 0.10 // ±10% = "dans la cible"
 
@@ -18,7 +23,7 @@ function StatCard({ label, value, sub, color = 'text-white' }) {
 
 export default function Insights({ user, profile }) {
   const { history } = useFoodHistory(user?.id, 7)
-  const { diff } = useWeightLogs(user?.id, 7)
+  const { diff, latest } = useWeightLogs(user?.id, 7)
 
   const days = history.length
   const target = profile?.target_calories ?? null
@@ -119,13 +124,27 @@ export default function Insights({ user, profile }) {
             )}
           </div>
 
-          {/* Tendance poids */}
-          <div className="card">
-            <p className="text-slate-400 text-sm mb-1">Tendance poids (7 jours)</p>
+          {/* Tendance poids + projection objectif */}
+          <div className="card space-y-2">
+            <p className="text-slate-400 text-sm">Tendance poids (7 jours)</p>
             <div className={`flex items-center gap-2 text-xl font-bold ${diffColor}`}>
               <DiffIcon size={18} />
               {diff == null ? 'Pas assez de données' : `${diff > 0 ? '+' : ''}${diff} kg`}
             </div>
+            {(() => {
+              if (!latest || !profile?.target_weight_kg) return null
+              const proj = projectWeightGoal({ currentKg: +latest.weight_kg, targetKg: +profile.target_weight_kg, weeklyKg: diff })
+              if (!proj) return null
+              if (proj.reached) return <p className="text-sm text-green-400">🎯 Objectif de poids atteint !</p>
+              if (proj.wrongDirection) return <p className="text-xs text-amber-400">Ta tendance s'éloigne de l'objectif pour l'instant — rien d'alarmant, ajuste si besoin.</p>
+              if (proj.weeks) return (
+                <p className="text-sm text-slate-300">
+                  Objectif estimé vers le <span className="text-green-400 font-medium">{fmtDate(proj.targetDate)}</span>
+                  <span className="text-slate-500"> (~{proj.weeks} sem · estimation au rythme actuel, pas une promesse)</span>
+                </p>
+              )
+              return null
+            })()}
           </div>
 
           {/* Graphique kcal/jour */}
