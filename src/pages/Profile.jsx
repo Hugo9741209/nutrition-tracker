@@ -18,6 +18,8 @@ export default function Profile({ user, onProfileSaved }) {
   })
   const [saving, setSaving]   = useState(false)
   const [msg, setMsg]         = useState('')
+  // Violations renvoyées par le backend si l'objectif est rejeté (UNSAFE_GOAL).
+  const [serverViolations, setServerViolations] = useState(null)
 
   useEffect(() => {
     if (profile) setForm(f => ({ ...f, ...profile }))
@@ -41,11 +43,20 @@ export default function Profile({ user, onProfileSaved }) {
   async function handleSubmit(e) {
     e.preventDefault()
     setSaving(true)
+    setServerViolations(null)
     const { error } = await saveProfile(form)
-    if (error) setMsg('Erreur : ' + error.message)
-    else { setMsg('✓ Profil sauvegardé !'); onProfileSaved?.() }
+    if (error?.code === 'UNSAFE_GOAL') {
+      // Le backend refuse de persister : objectif NON sauvegardé, on garde l'alerte.
+      setServerViolations(error.violations)
+      setMsg('⚠️ Objectif non enregistré : trop risqué. Ajuste-le avant de sauvegarder.')
+    } else if (error) {
+      setMsg('Erreur : ' + error.message)
+    } else {
+      setMsg('✓ Profil sauvegardé !')
+      onProfileSaved?.()
+    }
     setSaving(false)
-    setTimeout(() => setMsg(''), 3000)
+    setTimeout(() => setMsg(''), 4000)
   }
 
   if (loading) return <div className="flex justify-center pt-20"><div className="w-6 h-6 border-2 border-green-500 border-t-transparent rounded-full animate-spin" /></div>
@@ -193,7 +204,9 @@ export default function Profile({ user, onProfileSaved }) {
           })()}
         </div>
 
-        {msg && <p className={`text-sm ${msg.startsWith('✓') ? 'text-green-400' : 'text-red-400'}`}>{msg}</p>}
+        {serverViolations && <SafetyBanner safety={{ ok: false, violations: serverViolations }} />}
+
+        {msg && <p className={`text-sm ${msg.startsWith('✓') ? 'text-green-400' : msg.startsWith('⚠️') ? 'text-amber-400' : 'text-red-400'}`}>{msg}</p>}
 
         <button type="submit" disabled={saving} className="btn-primary w-full">
           {saving ? 'Sauvegarde...' : 'Sauvegarder le profil'}
