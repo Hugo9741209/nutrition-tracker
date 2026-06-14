@@ -2,12 +2,24 @@ import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, ReferenceLin
 import { TrendingUp, TrendingDown, Minus, Target, Flame } from 'lucide-react'
 import { useFoodHistory } from '../hooks/useFoodLogs'
 import { useWeightLogs } from '../hooks/useWeightLogs'
+import { useInsights } from '../hooks/useInsights'
 import { projectWeightGoal } from '../lib/insights'
+import { generateRecommendations } from '../lib/coach'
 import { perKg, inRange, PROTEIN_ENDURANCE_RANGE, CARBS_REST_RANGE } from '../components/nutritionDisplay'
 
 function fmtDate(iso) {
   return new Date(iso + 'T00:00:00').toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })
 }
+
+// Régularité de saisie — cadrage bienveillant, sans punition.
+function regularite(n) {
+  if (n >= 7) return { txt: 'Semaine complète, top 🎉', c: 'text-green-400' }
+  if (n >= 4) return { txt: 'Belle régularité 💪', c: 'text-green-400' }
+  if (n >= 1) return { txt: 'Bon début, continue 🌱', c: 'text-cyan-400' }
+  return { txt: 'On démarre quand tu veux', c: 'text-slate-400' }
+}
+
+const RECO_COLOR = { success: 'text-green-400', warn: 'text-amber-400', warning: 'text-amber-400', info: 'text-slate-300' }
 
 const TolPct = 0.10 // ±10% = "dans la cible"
 
@@ -24,6 +36,11 @@ function StatCard({ label, value, sub, color = 'text-white' }) {
 export default function Insights({ user, profile }) {
   const { history } = useFoodHistory(user?.id, 7)
   const { diff, latest } = useWeightLogs(user?.id, 7)
+  const { insights } = useInsights(user?.id, {
+    targets: { calories: profile?.target_calories, protein_g: profile?.target_protein_g },
+    days: 7,
+  })
+  const recos = generateRecommendations({ profile: profile ?? {}, insights, water: null })
 
   const days = history.length
   const target = profile?.target_calories ?? null
@@ -77,6 +94,29 @@ export default function Insights({ user, profile }) {
           Logge tes repas pendant quelques jours pour débloquer ton bilan hebdomadaire 📊
         </div>
       )}
+
+      {/* Régularité + conseils bienveillants du coach */}
+      <div className="card space-y-3">
+        <div className="flex items-center justify-between">
+          <p className="text-sm text-slate-300 font-medium">Régularité</p>
+          {(() => { const r = regularite(days); return <span className={`text-sm font-medium ${r.c}`}>{days}/7 jours · {r.txt}</span> })()}
+        </div>
+        <div className="flex gap-1.5">
+          {Array.from({ length: 7 }).map((_, i) => (
+            <div key={i} className={`h-2 flex-1 rounded-full ${i < days ? 'bg-green-500' : 'bg-slate-800'}`} />
+          ))}
+        </div>
+        {recos?.length > 0 && (
+          <div className="space-y-2 pt-1">
+            {recos.slice(0, 3).map(r => (
+              <div key={r.id} className="text-xs">
+                <p className={`font-medium ${RECO_COLOR[r.level] ?? 'text-slate-300'}`}>{r.title}</p>
+                <p className="text-slate-500">{r.message}</p>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
 
       {avg && (
         <>
