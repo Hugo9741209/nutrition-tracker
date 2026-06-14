@@ -30,13 +30,19 @@ function Ring({ value, target, color, label, unit = 'g' }) {
   )
 }
 
-import { perKg, inRange, PROTEIN_ENDURANCE_RANGE } from '../nutritionDisplay'
+import { perKg, inRange, PROTEIN_ENDURANCE_RANGE, CARBS_REST_RANGE, CARBS_TRAIN_RANGE } from '../nutritionDisplay'
 
-export default function MacroRings({ totals, profile }) {
+// dayType : 'rest' (jour repos, 5–7 g/kg) ou 'run' (jour d'entraînement, 6–10 g/kg).
+export default function MacroRings({ totals, profile, dayType = 'rest' }) {
   const w = profile?.current_weight_kg ? +profile.current_weight_kg : null
   // g/kg de la cible protéique = métrique que le sportif d'endurance comprend (§7).
   const protKg = w && profile?.target_protein_g ? perKg(+profile.target_protein_g, w) : null
   const protOk = protKg != null && inRange(protKg, PROTEIN_ENDURANCE_RANGE)
+
+  // Glucides = carburant. La bande de référence dépend du type de jour.
+  const carbKg = w && profile?.target_carbs_g ? perKg(+profile.target_carbs_g, w) : null
+  const carbBand = dayType === 'run' ? CARBS_TRAIN_RANGE : CARBS_REST_RANGE
+  const carbOk = carbKg != null && inRange(carbKg, carbBand)
 
   return (
     <div className="card">
@@ -46,11 +52,21 @@ export default function MacroRings({ totals, profile }) {
         <Ring value={totals.carbs_g}   target={profile?.target_carbs_g   ?? 250} color="#fb923c" label="Glucides" />
         <Ring value={totals.fat_g}     target={profile?.target_fat_g     ?? 70}  color="#c084fc" label="Lipides" />
       </div>
-      {protKg != null && (
-        <p className="text-xs text-center text-slate-500 mt-4">
-          Cible protéines : <span className={protOk ? 'text-green-400' : 'text-amber-400'}>{protKg} g/kg</span>
-          <span className="text-slate-600"> · zone endurance 1,5–1,7 g/kg</span>
-        </p>
+      {(protKg != null || carbKg != null) && (
+        <div className="text-xs text-center text-slate-500 mt-4 space-y-1">
+          {protKg != null && (
+            <p>
+              Protéines : <span className={protOk ? 'text-green-400' : 'text-amber-400'}>{protKg} g/kg</span>
+              <span className="text-slate-600"> · zone endurance 1,5–1,7 g/kg</span>
+            </p>
+          )}
+          {carbKg != null && (
+            <p>
+              Glucides (carburant) : <span className={carbOk ? 'text-green-400' : 'text-amber-400'}>{carbKg} g/kg</span>
+              <span className="text-slate-600"> · {dayType === 'run' ? 'jour run 6–10' : 'jour repos 5–7'} g/kg</span>
+            </p>
+          )}
+        </div>
       )}
     </div>
   )

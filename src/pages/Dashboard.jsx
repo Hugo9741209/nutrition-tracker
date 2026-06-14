@@ -1,5 +1,6 @@
+import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { BarChart2, TrendingUp, TrendingDown, Minus, ArrowRight } from 'lucide-react'
+import { BarChart2, TrendingUp, TrendingDown, Minus, ArrowRight, Footprints, Moon } from 'lucide-react'
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, ReferenceLine } from 'recharts'
 import { useFoodLogs, useFoodHistory } from '../hooks/useFoodLogs'
 import { useWeightLogs } from '../hooks/useWeightLogs'
@@ -21,6 +22,9 @@ export default function Dashboard({ user, profile }) {
   const { totals } = useFoodLogs(user?.id, todayStr())
   const { history } = useFoodHistory(user?.id, 14)
   const { logs: weightLogs, latest, diff } = useWeightLogs(user?.id, 30)
+
+  // Affichage seulement : type de jour → bande de référence glucides (§7). Aucun tracking de séance.
+  const [dayType, setDayType] = useState('rest')
 
   const targetCal = profile?.target_calories ?? 2500
   const name = profile?.name ?? user?.email?.split('@')[0] ?? 'Toi'
@@ -63,8 +67,28 @@ export default function Dashboard({ user, profile }) {
       {/* Calories */}
       <CalorieBar consumed={totals.calories} target={targetCal} />
 
+      {/* Type de jour — change la cible glucides de référence (affichage uniquement) */}
+      <div className="flex items-center gap-2">
+        <button
+          type="button" onClick={() => setDayType('rest')}
+          className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-xl text-sm font-medium border transition-colors ${
+            dayType === 'rest' ? 'bg-green-500/15 border-green-500 text-green-400' : 'bg-slate-800 border-slate-700 text-slate-400 hover:text-white'
+          }`}
+        >
+          <Moon size={15} /> Jour repos
+        </button>
+        <button
+          type="button" onClick={() => setDayType('run')}
+          className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-xl text-sm font-medium border transition-colors ${
+            dayType === 'run' ? 'bg-green-500/15 border-green-500 text-green-400' : 'bg-slate-800 border-slate-700 text-slate-400 hover:text-white'
+          }`}
+        >
+          <Footprints size={15} /> Jour run
+        </button>
+      </div>
+
       {/* Macros */}
-      <MacroRings totals={totals} profile={profile} />
+      <MacroRings totals={totals} profile={profile} dayType={dayType} />
 
       {/* Graphique 14 jours */}
       <div className="card">
