@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
 import { useProfile } from '../hooks/useProfile'
 // Calculs = source de vérité backend (cf. CONTRAT_AGENTS.md). On importe, on n'invente pas.
-import { calcTDEE, calcTargetCalories, calcMacros, tdeeRange, checkGoalSafety, detectBlindSpot, BLIND_SPOT_LABELS, ACTIVITY_LABELS, GOAL_LABELS } from '../lib/nutrition'
+import { tdeeFromProfile, computeBMR, calcTargetCalories, calcMacros, tdeeRange, checkGoalSafety, detectBlindSpot, BLIND_SPOT_LABELS, ACTIVITY_LABELS, GOAL_LABELS } from '../lib/nutrition'
 // Helpers d'affichage = domaine frontend.
 import { perKg, inRange, PROTEIN_ENDURANCE_RANGE, CARBS_TRAIN_RANGE } from '../components/nutritionDisplay'
 import SafetyBanner from '../components/SafetyBanner'
@@ -12,7 +12,7 @@ export default function Profile({ user, onProfileSaved }) {
   const { profile, loading, saveProfile } = useProfile(user?.id)
   const [form, setForm] = useState({
     name: '', age: 20, gender: 'male', height_cm: 175,
-    current_weight_kg: '', target_weight_kg: '',
+    current_weight_kg: '', target_weight_kg: '', body_fat_pct: '',
     activity_level: 'very_active', goal: 'maintain',
     target_calories: '', target_protein_g: '', target_carbs_g: '', target_fat_g: '',
   })
@@ -30,9 +30,9 @@ export default function Profile({ user, onProfileSaved }) {
   }
 
   function autoCalc() {
-    const { age, gender, height_cm, current_weight_kg, activity_level, goal } = form
+    const { age, gender, height_cm, current_weight_kg, activity_level, goal, body_fat_pct } = form
     if (!current_weight_kg || !height_cm) return
-    const tdee = calcTDEE({ weight_kg: +current_weight_kg, height_cm: +height_cm, age: +age, gender, activity_level })
+    const tdee = tdeeFromProfile({ weight_kg: +current_weight_kg, height_cm: +height_cm, age: +age, gender, activity_level, body_fat_pct: body_fat_pct ? +body_fat_pct : undefined })
     const targetCal = calcTargetCalories(tdee, goal)
     const macros = calcMacros(targetCal, goal, +current_weight_kg)
     setForm(f => ({ ...f, target_calories: targetCal, ...macros }))
@@ -44,7 +44,9 @@ export default function Profile({ user, onProfileSaved }) {
     e.preventDefault()
     setSaving(true)
     setServerViolations(null)
-    const { error } = await saveProfile(form)
+    // % masse grasse optionnel : '' → null (colonne numérique en BDD).
+    const payload = { ...form, body_fat_pct: form.body_fat_pct === '' || form.body_fat_pct == null ? null : +form.body_fat_pct }
+    const { error } = await saveProfile(payload)
     if (error?.code === 'UNSAFE_GOAL') {
       // Le backend refuse de persister : objectif NON sauvegardé, on garde l'alerte.
       setServerViolations(error.violations)
@@ -104,6 +106,11 @@ export default function Profile({ user, onProfileSaved }) {
             <div>
               <label className="label">Poids cible (kg)</label>
               <input type="number" step="0.1" className="input" value={form.target_weight_kg ?? ''} onChange={e => set('target_weight_kg', e.target.value)} />
+            </div>
+            <div className="col-span-2">
+              <label className="label">% masse grasse <span className="text-slate-500 normal-case">(optionnel — affine l'estimation)</span></label>
+              <input type="number" step="0.1" min="3" max="60" className="input" value={form.body_fat_pct ?? ''} onChange={e => set('body_fat_pct', e.target.value)} placeholder="ex. 15" />
+              <p className="text-[11px] text-slate-500 mt-1">Si renseigné, le calcul utilise Katch-McArdle (basé sur ta masse maigre), plus fiable pour un profil sportif.</p>
             </div>
           </div>
         </div>
@@ -172,7 +179,10 @@ export default function Profile({ user, onProfileSaved }) {
 
           {form.target_calories && form.current_weight_kg && (() => {
             const w = +form.current_weight_kg
-            const tdee = calcTDEE({ weight_kg: w, height_cm: +form.height_cm, age: +form.age, gender: form.gender, activity_level: form.activity_level })
+            const bf = form.body_fat_pct ? +form.body_fat_pct : undefined
+            const tdee = tdeeFromProfile({ weight_kg: w, height_cm: +form.height_cm, age: +form.age, gender: form.gender, activity_level: form.activity_level, body_fat_pct: bf })
+            const { method, marginPct } = computeBMR({ weight_kg: w, height_cm: +form.height_cm, age: +form.age, gender: form.gender, body_fat_pct: bf })
+            const methodLabel = method === 'katch_mcardle' ? 'Katch-McArdle (basé sur ta masse maigre)' : 'Mifflin-St Jeor (estimation standard)'
             const { low, high } = tdeeRange(tdee)
             const protKg = form.target_protein_g ? perKg(+form.target_protein_g, w) : null
             const carbKg = form.target_carbs_g ? perKg(+form.target_carbs_g, w) : null
@@ -183,13 +193,13 @@ export default function Profile({ user, onProfileSaved }) {
               tdee, targetCalories: +form.target_calories, gender: form.gender,
               weight_kg: w, protein_g: form.target_protein_g ? +form.target_protein_g : null,
             })
-            const blindSpot = detectBlindSpot({ age: +form.age, weight_kg: w, height_cm: +form.height_cm })
+            const blindSpot = detectBlindSpot({ age: +form.age, weight_kg: w, height_cm: +form.height_cm, body_fat_pct: bf })
             return (
               <div className="space-y-2">
                 <div className="bg-slate-800 rounded-xl p-3 text-xs text-slate-400 space-y-1.5">
                   <p className="text-slate-300 font-medium mb-2">Résumé nutritionnel</p>
-                  <p>⚡ Dépense estimée (TDEE) : <span className="text-white">≈ {tdee} kcal/jour</span> <span className="text-slate-500">(fourchette {low}–{high}, marge ±10 %)</span></p>
-                  <p className="text-[11px] text-slate-500 -mt-1">La formule Mifflin-St Jeor est précise à ±10 %. Le multiplicateur d'activité (NEAT) est l'estimation la plus incertaine : ajuste selon tes résultats réels après 2–3 semaines.</p>
+                  <p>⚡ Dépense estimée (TDEE) : <span className="text-white">≈ {tdee} kcal/jour</span> <span className="text-slate-500">(fourchette {low}–{high}, marge ±{marginPct} %)</span></p>
+                  <p className="text-[11px] text-slate-500 -mt-1">Méthode : <span className="text-slate-400">{methodLabel}</span>{!bf && <span> — renseigne ton % masse grasse pour une estimation plus fiable.</span>} Le multiplicateur d'activité (NEAT) reste l'estimation la plus incertaine : ajuste selon tes résultats réels après 2–3 semaines.</p>
                   <p>🎯 Objectif calorique : <span className="text-green-400">{form.target_calories} kcal</span></p>
                   {protKg != null && (
                     <p>💪 Protéines : <span className="text-blue-400">{form.target_protein_g} g</span> · <span className={protOk ? 'text-green-400' : 'text-amber-400'}>{protKg} g/kg</span> <span className="text-slate-500">(zone endurance 1,5–1,7 g/kg)</span></p>
