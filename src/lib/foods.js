@@ -121,6 +121,27 @@ export async function searchFoods(query, { limit = 8 } = {}) {
   return dedupeFoods([...ciqual, ...off]).slice(0, limit * 2)
 }
 
+// --- Recherche par code-barres (scan) --------------------------------------
+// Valide un code-barres (EAN/UPC : 8 à 14 chiffres). Renvoie null si invalide.
+export function sanitizeBarcode(raw) {
+  const code = String(raw ?? '').trim()
+  return /^\d{8,14}$/.test(code) ? code : null
+}
+
+// Lookup OFF par code-barres → aliment normalisé (ou null si non trouvé).
+export async function getFoodByBarcode(raw) {
+  const code = sanitizeBarcode(raw)
+  if (!code) return null
+  try {
+    const res = await fetch(`https://world.openfoodfacts.org/api/v2/product/${code}.json`)
+    const json = await res.json()
+    if (json.status !== 1 || !json.product) return null
+    return normalizeOFF({ ...json.product, code })
+  } catch {
+    return null
+  }
+}
+
 // Libellés de fiabilité pour l'UI (le front choisit le rendu).
 export const RELIABILITY_LABELS = {
   high: 'CIQUAL · base officielle ANSES',

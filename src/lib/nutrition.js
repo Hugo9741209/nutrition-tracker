@@ -96,6 +96,7 @@ export const SOURCES = {
   ansesFloor: 'ANSES — plancher 1500 kcal H / 1200 kcal F',
   proteinRDA: 'RDA OMS 2007 — plancher protéines 0,83 g/kg/j',
   deficit:    'Bornes saines — ~0,5 kg/sem max (déficit 500 kcal/j)',
+  wishnofsky: 'Wishnofsky 1958 — 1 kg de graisse ≈ 7700 kcal (modèle approximatif)',
 }
 
 // BMR Katch-McArdle (masse maigre) — si % masse grasse fiable. Source: bmrKatch.
@@ -167,6 +168,13 @@ export function scaleNutrients(per100g, quantityG) {
     fat_g:     +((per100g.fat_g ?? 0) * r).toFixed(1),
     fiber_g:   +((per100g.fiber_g ?? 0) * r).toFixed(1),
   }
+}
+
+// Tendance poids (modèle Wishnofsky) — APPROXIMATIF. Source: SOURCES.wishnofsky.
+// 1 kg de graisse ≈ 7700 kcal. À présenter comme une estimation à recouper avec
+// le poids réel mesuré sur plusieurs semaines, JAMAIS comme une prédiction ferme.
+export function estimateWeightTrendKg(totalCalorieBalance) {
+  return { kg: +(totalCalorieBalance / 7700).toFixed(2), model: 'approximate' }
 }
 
 export function formatDate(date = new Date()) {

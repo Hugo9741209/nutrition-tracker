@@ -3,7 +3,7 @@ import { describe, it, expect, vi } from 'vitest'
 // Évite l'init d'un vrai client Supabase (pas d'env vars en test).
 vi.mock('./supabase', () => ({ supabase: {} }))
 
-import { normalizeOFF, normalizeCiqual, dedupeFoods, toLogEntry } from './foods.js'
+import { normalizeOFF, normalizeCiqual, dedupeFoods, toLogEntry, sanitizeBarcode } from './foods.js'
 
 describe('normalizeOFF', () => {
   it('mappe un produit OFF exploitable (kcal directe)', () => {
@@ -48,6 +48,18 @@ describe('dedupeFoods', () => {
     const a = { source: 'ciqual', reliability: 'high', food_name: 'Banane', brand: '', per100g: {} }
     const b = { source: 'ciqual', reliability: 'high', food_name: 'Pomme', brand: '', per100g: {} }
     expect(dedupeFoods([a, b])).toHaveLength(2)
+  })
+})
+
+describe('sanitizeBarcode', () => {
+  it('accepte 8 à 14 chiffres', () => {
+    expect(sanitizeBarcode('3017620422003')).toBe('3017620422003')
+    expect(sanitizeBarcode(' 12345678 ')).toBe('12345678')
+  })
+  it('rejette les codes invalides', () => {
+    expect(sanitizeBarcode('123')).toBeNull()
+    expect(sanitizeBarcode('abc12345')).toBeNull()
+    expect(sanitizeBarcode(null)).toBeNull()
   })
 })
 

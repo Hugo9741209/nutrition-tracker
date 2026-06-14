@@ -137,3 +137,23 @@ INSERT INTO public.ciqual_foods (code, food_name, calories, protein_g, carbs_g, 
   ('cq_tomate',            'Tomate',                         18, 0.9, 3.9, 0.2, 1.2, 'Légumes'),
   ('cq_brocoli_cuit',      'Brocoli cuit',                   35, 2.4, 7.0, 0.4, 3.3, 'Légumes')
 ON CONFLICT (code) DO NOTHING;
+
+-- ============================================
+-- Repas favoris / templates (1 par user, contient une liste d'aliments)
+-- items = JSONB : [{ food_name, brand, quantity_g, calories, protein_g, carbs_g, fat_g, fiber_g, source }]
+-- ============================================
+CREATE TABLE IF NOT EXISTS public.meal_templates (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  name TEXT NOT NULL,
+  meal_type TEXT DEFAULT 'lunch',
+  items JSONB NOT NULL DEFAULT '[]'::jsonb,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_meal_templates_user ON public.meal_templates (user_id);
+
+ALTER TABLE public.meal_templates ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "own_tpl_select" ON public.meal_templates FOR SELECT USING (auth.uid() = user_id);
+CREATE POLICY "own_tpl_insert" ON public.meal_templates FOR INSERT WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "own_tpl_update" ON public.meal_templates FOR UPDATE USING (auth.uid() = user_id);
+CREATE POLICY "own_tpl_delete" ON public.meal_templates FOR DELETE USING (auth.uid() = user_id);
