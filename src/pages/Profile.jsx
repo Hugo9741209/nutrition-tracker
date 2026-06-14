@@ -1,7 +1,11 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
 import { useProfile } from '../hooks/useProfile'
-import { calcTDEE, calcTargetCalories, calcMacros, ACTIVITY_LABELS, GOAL_LABELS } from '../lib/nutrition'
+// Calculs = source de vérité backend (cf. CONTRAT_AGENTS.md). On importe, on n'invente pas.
+import { calcTDEE, calcTargetCalories, calcMacros, tdeeRange, checkGoalSafety, detectBlindSpot, BLIND_SPOT_LABELS, ACTIVITY_LABELS, GOAL_LABELS } from '../lib/nutrition'
+// Helpers d'affichage = domaine frontend.
+import { perKg, inRange, PROTEIN_ENDURANCE_RANGE, CARBS_TRAIN_RANGE } from '../components/nutritionDisplay'
+import SafetyBanner from '../components/SafetyBanner'
 import { LogOut, Zap, Target, Calculator } from 'lucide-react'
 
 export default function Profile({ user, onProfileSaved }) {
@@ -155,14 +159,38 @@ export default function Profile({ user, onProfileSaved }) {
             </div>
           </div>
 
-          {form.target_calories && form.current_weight_kg && (
-            <div className="bg-slate-800 rounded-xl p-3 text-xs text-slate-400 space-y-1">
-              <p className="text-slate-300 font-medium mb-2">Résumé nutritionnel</p>
-              <p>⚡ TDEE estimé : <span className="text-white">{calcTDEE({ weight_kg: +form.current_weight_kg, height_cm: +form.height_cm, age: +form.age, gender: form.gender, activity_level: form.activity_level })} kcal/jour</span></p>
-              <p>🎯 Objectif calorique : <span className="text-green-400">{form.target_calories} kcal</span></p>
-              <p>💪 Protéines min. recommandées (sportif) : <span className="text-blue-400">{Math.round(+form.current_weight_kg * 1.8)}g/j</span></p>
-            </div>
-          )}
+          {form.target_calories && form.current_weight_kg && (() => {
+            const w = +form.current_weight_kg
+            const tdee = calcTDEE({ weight_kg: w, height_cm: +form.height_cm, age: +form.age, gender: form.gender, activity_level: form.activity_level })
+            const { low, high } = tdeeRange(tdee)
+            const protKg = form.target_protein_g ? perKg(+form.target_protein_g, w) : null
+            const carbKg = form.target_carbs_g ? perKg(+form.target_carbs_g, w) : null
+            const protOk = protKg != null && inRange(protKg, PROTEIN_ENDURANCE_RANGE)
+            const carbOk = carbKg != null && inRange(carbKg, CARBS_TRAIN_RANGE)
+            // Garde-fous + angle mort = calculés par le backend, on ne fait qu'afficher.
+            const safety = checkGoalSafety({
+              tdee, targetCalories: +form.target_calories, gender: form.gender,
+              weight_kg: w, protein_g: form.target_protein_g ? +form.target_protein_g : null,
+            })
+            const blindSpot = detectBlindSpot({ age: +form.age, weight_kg: w, height_cm: +form.height_cm })
+            return (
+              <div className="space-y-2">
+                <div className="bg-slate-800 rounded-xl p-3 text-xs text-slate-400 space-y-1.5">
+                  <p className="text-slate-300 font-medium mb-2">Résumé nutritionnel</p>
+                  <p>⚡ Dépense estimée (TDEE) : <span className="text-white">≈ {tdee} kcal/jour</span> <span className="text-slate-500">(fourchette {low}–{high}, marge ±10 %)</span></p>
+                  <p className="text-[11px] text-slate-500 -mt-1">La formule Mifflin-St Jeor est précise à ±10 %. Le multiplicateur d'activité (NEAT) est l'estimation la plus incertaine : ajuste selon tes résultats réels après 2–3 semaines.</p>
+                  <p>🎯 Objectif calorique : <span className="text-green-400">{form.target_calories} kcal</span></p>
+                  {protKg != null && (
+                    <p>💪 Protéines : <span className="text-blue-400">{form.target_protein_g} g</span> · <span className={protOk ? 'text-green-400' : 'text-amber-400'}>{protKg} g/kg</span> <span className="text-slate-500">(zone endurance 1,5–1,7 g/kg)</span></p>
+                  )}
+                  {carbKg != null && (
+                    <p>🔋 Glucides (carburant) : <span className="text-orange-400">{form.target_carbs_g} g</span> · <span className={carbOk ? 'text-green-400' : 'text-amber-400'}>{carbKg} g/kg</span> <span className="text-slate-500">(jour run 6–10 g/kg)</span></p>
+                  )}
+                </div>
+                <SafetyBanner safety={safety} blindSpotLabel={blindSpot ? BLIND_SPOT_LABELS[blindSpot] : null} />
+              </div>
+            )
+          })()}
         </div>
 
         {msg && <p className={`text-sm ${msg.startsWith('✓') ? 'text-green-400' : 'text-red-400'}`}>{msg}</p>}

@@ -30,7 +30,14 @@ function Ring({ value, target, color, label, unit = 'g' }) {
   )
 }
 
+import { perKg, inRange, PROTEIN_ENDURANCE_RANGE } from '../nutritionDisplay'
+
 export default function MacroRings({ totals, profile }) {
+  const w = profile?.current_weight_kg ? +profile.current_weight_kg : null
+  // g/kg de la cible protéique = métrique que le sportif d'endurance comprend (§7).
+  const protKg = w && profile?.target_protein_g ? perKg(+profile.target_protein_g, w) : null
+  const protOk = protKg != null && inRange(protKg, PROTEIN_ENDURANCE_RANGE)
+
   return (
     <div className="card">
       <p className="text-slate-400 text-sm mb-4">Macronutriments</p>
@@ -39,6 +46,12 @@ export default function MacroRings({ totals, profile }) {
         <Ring value={totals.carbs_g}   target={profile?.target_carbs_g   ?? 250} color="#fb923c" label="Glucides" />
         <Ring value={totals.fat_g}     target={profile?.target_fat_g     ?? 70}  color="#c084fc" label="Lipides" />
       </div>
+      {protKg != null && (
+        <p className="text-xs text-center text-slate-500 mt-4">
+          Cible protéines : <span className={protOk ? 'text-green-400' : 'text-amber-400'}>{protKg} g/kg</span>
+          <span className="text-slate-600"> · zone endurance 1,5–1,7 g/kg</span>
+        </p>
+      )}
     </div>
   )
 }
