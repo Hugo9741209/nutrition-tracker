@@ -84,3 +84,28 @@ export function computeWeeklyInsights(logs, { targets, tdee, tolerancePct = 0.1 
     calorieRange: tdee ? tdeeRange(tdee) : null, // pour rappeler l'incertitude ±10%
   }
 }
+
+// Projection d'objectif de poids — APPROXIMATIVE (basée sur la tendance estimée).
+//   currentKg, targetKg : poids actuel et cible
+//   weeklyKg            : variation hebdo estimée (<0 = perte), ex. depuis weightTrend
+// Renvoie { reached, wrongDirection, weeks, targetDate, model } ou null si données manquantes.
+export function projectWeightGoal({ currentKg, targetKg, weeklyKg } = {}) {
+  if (currentKg == null || targetKg == null) return null
+  const delta = targetKg - currentKg            // <0 = il faut perdre
+  if (Math.abs(delta) < 0.1) return { reached: true, weeks: 0, model: 'approximate' }
+  if (!weeklyKg || weeklyKg === 0) return { reached: false, weeks: null, model: 'approximate' }
+
+  // La tendance va-t-elle dans le bon sens ? (perdre & weeklyKg<0, ou prendre & >0)
+  const wrongDirection = Math.sign(delta) !== Math.sign(weeklyKg)
+  if (wrongDirection) return { reached: false, wrongDirection: true, weeks: null, model: 'approximate' }
+
+  const weeks = Math.ceil(Math.abs(delta) / Math.abs(weeklyKg))
+  const targetDate = new Date(Date.now() + weeks * 7 * 24 * 3600 * 1000)
+  return {
+    reached: false,
+    wrongDirection: false,
+    weeks,
+    targetDate: targetDate.toISOString().split('T')[0],
+    model: 'approximate',
+  }
+}

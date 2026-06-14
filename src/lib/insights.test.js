@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { groupByDay, computeWeeklyInsights } from './insights.js'
+import { groupByDay, computeWeeklyInsights, projectWeightGoal } from './insights.js'
 
 const logs = [
   { logged_date: '2026-06-10', calories: 600, protein_g: 40, carbs_g: 60, fat_g: 20 },
@@ -37,5 +37,24 @@ describe('computeWeeklyInsights', () => {
     const r = computeWeeklyInsights([], {})
     expect(r.nDays).toBe(0)
     expect(r.weightTrend).toBeNull()
+  })
+})
+
+describe('projectWeightGoal', () => {
+  it('estime le nombre de semaines (perte)', () => {
+    const r = projectWeightGoal({ currentKg: 80, targetKg: 75, weeklyKg: -0.5 })
+    expect(r.weeks).toBe(10)
+    expect(r.model).toBe('approximate')
+  })
+  it('détecte une tendance dans le mauvais sens', () => {
+    const r = projectWeightGoal({ currentKg: 80, targetKg: 75, weeklyKg: 0.3 })
+    expect(r.wrongDirection).toBe(true)
+    expect(r.weeks).toBeNull()
+  })
+  it('objectif déjà atteint', () => {
+    expect(projectWeightGoal({ currentKg: 75, targetKg: 75, weeklyKg: -0.5 }).reached).toBe(true)
+  })
+  it('données manquantes → null', () => {
+    expect(projectWeightGoal({ currentKg: 80 })).toBeNull()
   })
 })
