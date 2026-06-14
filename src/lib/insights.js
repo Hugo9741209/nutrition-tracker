@@ -6,6 +6,7 @@
 //  estimée (Wishnofsky, marquée "approximate"). Le front affiche, il ne calcule pas.
 // ============================================================================
 import { estimateWeightTrendKg, tdeeRange } from './nutrition'
+import { dailyBalanceScore } from './score'
 
 // Somme des nutriments d'une liste de logs.
 function sumLogs(logs) {
@@ -83,6 +84,37 @@ export function computeWeeklyInsights(logs, { targets, tdee, tolerancePct = 0.1 
     weightTrend,
     calorieRange: tdee ? tdeeRange(tdee) : null, // pour rappeler l'incertitude ±10%
   }
+}
+
+// Bilan de période (ex. mensuel) — synthèse plus riche que l'hebdo :
+// moyennes + jours suivis + score moyen + variation de poids RÉELLE mesurée.
+//   foodLogs   : food_logs de la période
+//   weightLogs : weight_logs de la période (pour la variation réelle)
+//   targets    : { calories, protein_g } | tdee : dépense estimée
+export function computePeriodSummary(foodLogs, weightLogs = [], { targets, tdee } = {}) {
+  const base = computeWeeklyInsights(foodLogs, { targets, tdee })
+  const byDay = groupByDay(foodLogs)
+  const days = Object.values(byDay)
+
+  // Score moyen d'équilibre sur les jours suivis.
+  let avgScore = null
+  if (days.length && targets) {
+    const scores = days
+      .map((d) => dailyBalanceScore({ totals: d, targets }).score)
+      .filter((s) => s != null)
+    if (scores.length) avgScore = Math.round(scores.reduce((a, s) => a + s, 0) / scores.length)
+  }
+
+  // Variation de poids réelle : dernier - premier relevé (trié par date).
+  let weightDelta = null
+  if (weightLogs.length >= 2) {
+    const sorted = [...weightLogs].sort((a, b) => String(a.logged_date).localeCompare(String(b.logged_date)))
+    const from = +sorted[0].weight_kg
+    const to = +sorted[sorted.length - 1].weight_kg
+    weightDelta = { from, to, deltaKg: +(to - from).toFixed(1) }
+  }
+
+  return { ...base, daysLogged: days.length, avgScore, weightDelta }
 }
 
 // Projection d'objectif de poids — APPROXIMATIVE (basée sur la tendance estimée).

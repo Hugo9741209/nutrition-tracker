@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { groupByDay, computeWeeklyInsights, projectWeightGoal } from './insights.js'
+import { groupByDay, computeWeeklyInsights, projectWeightGoal, computePeriodSummary } from './insights.js'
 
 const logs = [
   { logged_date: '2026-06-10', calories: 600, protein_g: 40, carbs_g: 60, fat_g: 20 },
@@ -56,5 +56,28 @@ describe('projectWeightGoal', () => {
   })
   it('données manquantes → null', () => {
     expect(projectWeightGoal({ currentKg: 80 })).toBeNull()
+  })
+})
+
+describe('computePeriodSummary (mensuel)', () => {
+  const food = [
+    { logged_date: '2026-06-01', calories: 2000, protein_g: 150, carbs_g: 200, fat_g: 60 },
+    { logged_date: '2026-06-02', calories: 2000, protein_g: 150, carbs_g: 200, fat_g: 60 },
+  ]
+  const weights = [
+    { logged_date: '2026-06-01', weight_kg: 80 },
+    { logged_date: '2026-06-15', weight_kg: 79 },
+  ]
+  it('compte les jours suivis et le score moyen', () => {
+    const r = computePeriodSummary(food, weights, { targets: { calories: 2000, protein_g: 150 } })
+    expect(r.daysLogged).toBe(2)
+    expect(r.avgScore).toBe(100)
+  })
+  it('calcule la variation de poids réelle', () => {
+    const r = computePeriodSummary(food, weights, {})
+    expect(r.weightDelta).toEqual({ from: 80, to: 79, deltaKg: -1 })
+  })
+  it('weightDelta null si moins de 2 relevés', () => {
+    expect(computePeriodSummary(food, [{ logged_date: '2026-06-01', weight_kg: 80 }], {}).weightDelta).toBeNull()
   })
 })
