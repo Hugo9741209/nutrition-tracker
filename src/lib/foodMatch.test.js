@@ -1,6 +1,22 @@
 import { describe, it, expect, vi } from 'vitest'
 vi.mock('./supabase', () => ({ supabase: {} }))
 import { cleanProductLabel, scoreMatch, bestMatch } from './foodMatch.js'
+import { detectColumns } from '../../scripts/import-ciqual.mjs'
+
+describe('detectColumns (CIQUAL) — ne confond pas "avec fibres (kJ)" et "Fibres alimentaires"', () => {
+  it('choisit la vraie colonne fibres', () => {
+    const headers = [
+      'alim_code', 'alim_nom_fr',
+      'Energie, N x facteur Jones, avec fibres (kJ/100 g)',
+      'Energie, Règlement UE (kcal/100 g)',
+      'Protéines, N x facteur de Jones (g/100 g)',
+      'Glucides (g/100 g)', 'Lipides (g/100 g)', 'Fibres alimentaires (g/100 g)',
+    ]
+    const c = detectColumns(headers)
+    expect(c.fiber).toBe('Fibres alimentaires (g/100 g)')
+    expect(c.kcal).toContain('kcal')
+  })
+})
 
 describe('cleanProductLabel', () => {
   it('retire marque, poids et marketing', () => {

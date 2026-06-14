@@ -52,7 +52,8 @@ export function detectColumns(headers) {
     protein: findCol(headers, (h) => h.startsWith('proteines')),
     carbs:   findCol(headers, (h) => h.startsWith('glucides')),
     fat:     findCol(headers, (h) => h.startsWith('lipides')),
-    fiber:   findCol(headers, (h) => h.includes('fibres')),
+    // startsWith pour éviter la colonne "Energie … avec fibres (kJ)" qui contient aussi "fibres".
+    fiber:   findCol(headers, (h) => h.startsWith('fibres')),
   }
 }
 
