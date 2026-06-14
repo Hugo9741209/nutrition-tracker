@@ -1,13 +1,15 @@
 import { useState } from 'react'
-import { Plus, Trash2, ScanLine, Eraser, ShoppingCart, ReceiptText } from 'lucide-react'
+import { Plus, Trash2, ScanLine, Eraser, ShoppingCart, ReceiptText, Wallet } from 'lucide-react'
 import { useShoppingList } from '../hooks/useShoppingList'
 import { searchByBarcode } from '../lib/foods'
 import BarcodeScanner from '../components/BarcodeScanner'
 import DriveImport from '../components/DriveImport'
 import StaplePanel from '../components/StaplePanel'
+import { useBudget } from '../components/budgetStore'
 
 export default function Shopping({ user }) {
   const { items, loading, addItem, addMany, toggleItem, deleteItem, clearChecked } = useShoppingList(user?.id)
+  const { addOrder, monthTotal, lastOrder } = useBudget()
   const [label, setLabel] = useState('')
   const [qty, setQty] = useState('')
   const [scanning, setScanning] = useState(false)
@@ -32,6 +34,12 @@ export default function Shopping({ user }) {
       setScanMsg(`Produit introuvable (code ${code}). Ajoute-le à la main.`)
     }
     setTimeout(() => setScanMsg(''), 3000)
+  }
+
+  function handleImport(sel) {
+    addMany(sel.map(it => ({ label: it.name, qty: it.qty })))
+    const total = sel.reduce((s, it) => s + (it.price || 0), 0)
+    addOrder({ total, count: sel.length })
   }
 
   const checkedCount = items.filter(i => i.checked).length
@@ -62,6 +70,25 @@ export default function Shopping({ user }) {
         </button>
         {scanMsg && <p className="text-xs text-slate-400">{scanMsg}</p>}
       </form>
+
+      {/* Budget courses — alimenté par les imports Drive */}
+      {(monthTotal > 0 || lastOrder) && (
+        <div className="card flex items-center gap-4">
+          <Wallet size={20} className="text-green-400 shrink-0" />
+          <div className="flex-1 flex items-center justify-between">
+            <div>
+              <p className="text-xs text-slate-400">Dépensé ce mois-ci</p>
+              <p className="text-xl font-bold text-white">{monthTotal.toFixed(2)} €</p>
+            </div>
+            {lastOrder && (
+              <div className="text-right">
+                <p className="text-xs text-slate-400">Dernière commande</p>
+                <p className="text-sm text-slate-300">{lastOrder.total.toFixed(2)} € · {lastOrder.count} art.</p>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Produits phares — ajout rapide + éditable (déduits de l'historique Drive) */}
       <StaplePanel items={items} onAdd={(label, qty) => addItem(label, qty)} />
@@ -103,7 +130,7 @@ export default function Shopping({ user }) {
       )}
 
       {scanning && <BarcodeScanner onDetected={handleDetected} onClose={() => setScanning(false)} />}
-      {importing && <DriveImport onClose={() => setImporting(false)} onConfirm={(sel) => addMany(sel.map(it => ({ label: it.name, qty: it.qty })))} />}
+      {importing && <DriveImport onClose={() => setImporting(false)} onConfirm={handleImport} />}
     </div>
   )
 }

@@ -21,6 +21,12 @@ function extractWeight(name) {
   return ''
 }
 
+// Prix total d'une ligne "4,99 €" → 4.99 (number) ou null.
+function parsePrice(line) {
+  const m = (line || '').match(/^(\d{1,3}(?:[.,]\d{2}))\s*€$/)
+  return m ? parseFloat(m[1].replace(',', '.')) : null
+}
+
 export function parseDriveOrder(raw) {
   if (!raw) return []
   const lines = raw.replace(/\r/g, '').split('\n').map((s) => s.trim()).filter(Boolean)
@@ -38,7 +44,8 @@ export function parseDriveOrder(raw) {
     const count = parseInt(m[1], 10)
     const weight = extractWeight(name)
     const qty = count > 1 ? `x${count}${weight ? ` · ${weight}` : ''}` : weight
-    items.push({ name, qty, count })
+    const price = parsePrice(lines[i + 1]) // ligne suivant "Quantité : N" = total
+    items.push({ name, qty, count, price })
   }
   return items
 }

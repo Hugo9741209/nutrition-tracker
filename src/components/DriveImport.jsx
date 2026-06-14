@@ -101,7 +101,11 @@ export default function DriveImport({ onClose, onConfirm, confirmLabel = 'Ajoute
         </div>
 
         {items && items.length > 0 && (
-          <div className="p-4 border-t border-slate-800">
+          <div className="p-4 border-t border-slate-800 space-y-2">
+            {(() => {
+              const total = selected.reduce((s, it) => s + (it.price || 0), 0)
+              return total > 0 ? <p className="text-xs text-slate-400 text-center">Total sélection : <span className="text-white font-medium">{total.toFixed(2)} €</span></p> : null
+            })()}
             <button onClick={handleConfirm} disabled={!selected.length} className="btn-primary w-full flex items-center justify-center gap-2 disabled:opacity-40">
               <ShoppingCart size={16} /> {confirmLabel} ({selected.length})
             </button>
