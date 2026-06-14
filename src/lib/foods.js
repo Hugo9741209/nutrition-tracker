@@ -142,6 +142,9 @@ export async function getFoodByBarcode(raw) {
   }
 }
 
+// Alias attendu côté front (même fonction que getFoodByBarcode).
+export const searchByBarcode = getFoodByBarcode
+
 // Libellés de fiabilité pour l'UI (le front choisit le rendu).
 export const RELIABILITY_LABELS = {
   high: 'CIQUAL · base officielle ANSES',

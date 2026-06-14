@@ -39,5 +39,24 @@ export function useMealTemplates(userId) {
     return { error }
   }
 
-  return { templates, loading, saveTemplate, deleteTemplate, refetch: fetchTemplates }
+  // Ré-injecte les aliments d'un template dans food_logs à une date / repas donnés.
+  async function applyTemplate(template, { logged_date, meal_type } = {}) {
+    const rows = (template.items ?? []).map((it) => ({
+      user_id: userId,
+      food_name: it.food_name,
+      brand: it.brand ?? '',
+      quantity_g: it.quantity_g ?? 100,
+      calories: it.calories ?? 0,
+      protein_g: it.protein_g ?? 0,
+      carbs_g: it.carbs_g ?? 0,
+      fat_g: it.fat_g ?? 0,
+      fiber_g: it.fiber_g ?? 0,
+      meal_type: meal_type ?? template.meal_type ?? 'lunch',
+      logged_date,
+    }))
+    if (!rows.length) return { data: [], error: null }
+    return supabase.from('food_logs').insert(rows).select()
+  }
+
+  return { templates, loading, saveTemplate, deleteTemplate, applyTemplate, refetch: fetchTemplates }
 }

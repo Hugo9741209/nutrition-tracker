@@ -157,3 +157,38 @@ CREATE POLICY "own_tpl_select" ON public.meal_templates FOR SELECT USING (auth.u
 CREATE POLICY "own_tpl_insert" ON public.meal_templates FOR INSERT WITH CHECK (auth.uid() = user_id);
 CREATE POLICY "own_tpl_update" ON public.meal_templates FOR UPDATE USING (auth.uid() = user_id);
 CREATE POLICY "own_tpl_delete" ON public.meal_templates FOR DELETE USING (auth.uid() = user_id);
+
+-- ============================================
+-- Liste de courses (items cochables, persistés par user)
+-- ============================================
+CREATE TABLE IF NOT EXISTS public.shopping_items (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  label TEXT NOT NULL,
+  qty TEXT,                       -- libre : "500 g", "2", etc.
+  checked BOOLEAN NOT NULL DEFAULT false,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_shopping_user ON public.shopping_items (user_id);
+ALTER TABLE public.shopping_items ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "own_shop_select" ON public.shopping_items FOR SELECT USING (auth.uid() = user_id);
+CREATE POLICY "own_shop_insert" ON public.shopping_items FOR INSERT WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "own_shop_update" ON public.shopping_items FOR UPDATE USING (auth.uid() = user_id);
+CREATE POLICY "own_shop_delete" ON public.shopping_items FOR DELETE USING (auth.uid() = user_id);
+
+-- ============================================
+-- Hydratation (1 ligne par user + jour)
+-- ============================================
+CREATE TABLE IF NOT EXISTS public.water_logs (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  logged_date DATE NOT NULL DEFAULT CURRENT_DATE,
+  glasses INTEGER NOT NULL DEFAULT 0,
+  updated_at TIMESTAMPTZ DEFAULT NOW(),
+  UNIQUE(user_id, logged_date)
+);
+ALTER TABLE public.water_logs ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "own_water_select" ON public.water_logs FOR SELECT USING (auth.uid() = user_id);
+CREATE POLICY "own_water_insert" ON public.water_logs FOR INSERT WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "own_water_update" ON public.water_logs FOR UPDATE USING (auth.uid() = user_id);
+CREATE POLICY "own_water_delete" ON public.water_logs FOR DELETE USING (auth.uid() = user_id);
