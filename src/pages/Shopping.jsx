@@ -1,14 +1,16 @@
 import { useState } from 'react'
-import { Plus, Trash2, ScanLine, Eraser, ShoppingCart } from 'lucide-react'
+import { Plus, Trash2, ScanLine, Eraser, ShoppingCart, ReceiptText } from 'lucide-react'
 import { useShoppingList } from '../hooks/useShoppingList'
 import { searchByBarcode } from '../lib/foods'
 import BarcodeScanner from '../components/BarcodeScanner'
+import DriveImport from '../components/DriveImport'
 
 export default function Shopping({ user }) {
-  const { items, loading, addItem, toggleItem, deleteItem, clearChecked } = useShoppingList(user?.id)
+  const { items, loading, addItem, addMany, toggleItem, deleteItem, clearChecked } = useShoppingList(user?.id)
   const [label, setLabel] = useState('')
   const [qty, setQty] = useState('')
   const [scanning, setScanning] = useState(false)
+  const [importing, setImporting] = useState(false)
   const [scanMsg, setScanMsg] = useState('')
 
   async function handleAdd(e) {
@@ -54,6 +56,9 @@ export default function Shopping({ user }) {
             <ScanLine size={16} /> Scanner
           </button>
         </div>
+        <button type="button" onClick={() => setImporting(true)} className="w-full py-2 rounded-xl bg-slate-800 border border-slate-700 text-slate-300 hover:text-white flex items-center justify-center gap-2 text-sm">
+          <ReceiptText size={16} /> Importer un ticket Drive Super U
+        </button>
         {scanMsg && <p className="text-xs text-slate-400">{scanMsg}</p>}
       </form>
 
@@ -94,6 +99,7 @@ export default function Shopping({ user }) {
       )}
 
       {scanning && <BarcodeScanner onDetected={handleDetected} onClose={() => setScanning(false)} />}
+      {importing && <DriveImport onClose={() => setImporting(false)} onConfirm={(entries) => addMany(entries)} />}
     </div>
   )
 }
