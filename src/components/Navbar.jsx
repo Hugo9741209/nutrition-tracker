@@ -1,11 +1,12 @@
 import { NavLink } from 'react-router-dom'
-import { LayoutDashboard, UtensilsCrossed, Scale, User } from 'lucide-react'
+import { LayoutDashboard, UtensilsCrossed, BarChart3, Scale, User } from 'lucide-react'
 
 const links = [
-  { to: '/',        label: 'Dashboard', icon: LayoutDashboard },
-  { to: '/log',     label: 'Repas',     icon: UtensilsCrossed },
-  { to: '/weight',  label: 'Poids',     icon: Scale },
-  { to: '/profile', label: 'Profil',    icon: User },
+  { to: '/',         label: 'Dashboard', icon: LayoutDashboard },
+  { to: '/log',      label: 'Repas',     icon: UtensilsCrossed },
+  { to: '/insights', label: 'Bilan',     icon: BarChart3 },
+  { to: '/weight',   label: 'Poids',     icon: Scale },
+  { to: '/profile',  label: 'Profil',    icon: User },
 ]
 
 export default function Navbar() {
