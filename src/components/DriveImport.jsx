@@ -5,7 +5,7 @@ import { matchFoodByName } from '../lib/foodMatch'
 
 // Import d'un ticket / confirmation de commande Drive Super U → liste de courses.
 // L'utilisateur colle le texte de l'email ; on reconnaît les produits côté front.
-export default function DriveImport({ onClose, onConfirm }) {
+export default function DriveImport({ onClose, onConfirm, confirmLabel = 'Ajouter à ma liste' }) {
   const [raw, setRaw] = useState('')
   const [items, setItems] = useState(null)      // null tant qu'on n'a pas parsé
   const [picked, setPicked] = useState({})       // index -> bool
@@ -28,7 +28,8 @@ export default function DriveImport({ onClose, onConfirm }) {
 
   async function handleConfirm() {
     if (!selected.length) return
-    await onConfirm(selected.map((it) => ({ label: it.name, qty: it.qty })))
+    // On passe les items complets (nom, qty, match CIQUAL) ; le parent mappe.
+    await onConfirm(selected)
     onClose()
   }
 
@@ -102,7 +103,7 @@ export default function DriveImport({ onClose, onConfirm }) {
         {items && items.length > 0 && (
           <div className="p-4 border-t border-slate-800">
             <button onClick={handleConfirm} disabled={!selected.length} className="btn-primary w-full flex items-center justify-center gap-2 disabled:opacity-40">
-              <ShoppingCart size={16} /> Ajouter {selected.length} article{selected.length > 1 ? 's' : ''} à ma liste
+              <ShoppingCart size={16} /> {confirmLabel} ({selected.length})
             </button>
           </div>
         )}

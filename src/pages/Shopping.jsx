@@ -103,7 +103,7 @@ export default function Shopping({ user }) {
       )}
 
       {scanning && <BarcodeScanner onDetected={handleDetected} onClose={() => setScanning(false)} />}
-      {importing && <DriveImport onClose={() => setImporting(false)} onConfirm={(entries) => addMany(entries)} />}
+      {importing && <DriveImport onClose={() => setImporting(false)} onConfirm={(sel) => addMany(sel.map(it => ({ label: it.name, qty: it.qty })))} />}
     </div>
   )
 }

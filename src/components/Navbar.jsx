@@ -1,11 +1,12 @@
 import { NavLink } from 'react-router-dom'
-import { LayoutDashboard, UtensilsCrossed, Star, ShoppingCart, Droplet, BarChart3, Scale, User } from 'lucide-react'
+import { LayoutDashboard, UtensilsCrossed, Star, ShoppingCart, Boxes, Droplet, BarChart3, Scale, User } from 'lucide-react'
 
 const links = [
   { to: '/',          label: 'Dashboard', icon: LayoutDashboard },
   { to: '/log',       label: 'Repas',     icon: UtensilsCrossed },
   { to: '/favorites', label: 'Favoris',   icon: Star },
   { to: '/shopping',  label: 'Courses',   icon: ShoppingCart },
+  { to: '/pantry',    label: 'Stock',     icon: Boxes },
   { to: '/hydration', label: 'Eau',       icon: Droplet },
   { to: '/insights',  label: 'Bilan',     icon: BarChart3 },
   { to: '/weight',    label: 'Poids',     icon: Scale },
