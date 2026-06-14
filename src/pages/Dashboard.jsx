@@ -91,6 +91,16 @@ export default function Dashboard({ user, profile }) {
         </button>
       </div>
 
+      {/* Conseil péri-effort — seulement en jour run (script §7, nutrition péri-effort) */}
+      {dayType === 'run' && (
+        <div className="flex gap-3 rounded-2xl border border-orange-400/30 bg-orange-400/10 p-3">
+          <Footprints size={16} className="text-orange-400 shrink-0 mt-0.5" />
+          <p className="text-xs text-slate-300">
+            <span className="text-orange-300 font-medium">Sortie longue (&gt; 1 h) ?</span> Vise 30–60 g de glucides par heure d'effort (boisson, gel, fruits secs) pour tenir l'allure et retarder la fatigue.
+          </p>
+        </div>
+      )}
+
       {/* Macros */}
       <MacroRings totals={totals} profile={profile} dayType={dayType} />
 
