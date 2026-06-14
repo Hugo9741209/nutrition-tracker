@@ -83,3 +83,57 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 CREATE OR REPLACE TRIGGER on_auth_user_created
   AFTER INSERT ON auth.users
   FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
+
+-- ============================================
+-- CIQUAL — table de référence aliments (ANSES, valeurs /100g)
+-- Source : CIQUAL 2020 (ciqual.anses.fr). Base FR officielle, fiabilité élevée.
+-- Données statiques → lecture publique (RLS select true), écriture réservée au SQL editor.
+-- L'import complet (3484 aliments) se fait via le CSV officiel (data.gouv.fr) ;
+-- ci-dessous une amorce d'aliments courants pour rendre la recherche utile tout de suite.
+-- ============================================
+CREATE TABLE IF NOT EXISTS public.ciqual_foods (
+  code TEXT PRIMARY KEY,         -- code CIQUAL (ou slug en attendant l'import officiel)
+  food_name TEXT NOT NULL,
+  calories NUMERIC NOT NULL DEFAULT 0,   -- kcal /100g
+  protein_g NUMERIC DEFAULT 0,
+  carbs_g NUMERIC DEFAULT 0,
+  fat_g NUMERIC DEFAULT 0,
+  fiber_g NUMERIC DEFAULT 0,
+  food_group TEXT
+);
+
+-- Index recherche par nom (trigram, pour les LIKE/ILIKE %terme%)
+CREATE EXTENSION IF NOT EXISTS pg_trgm;
+CREATE INDEX IF NOT EXISTS idx_ciqual_name ON public.ciqual_foods USING gin (food_name gin_trgm_ops);
+
+ALTER TABLE public.ciqual_foods ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "ciqual_read_all" ON public.ciqual_foods FOR SELECT USING (true);
+
+-- Amorce d'aliments courants (valeurs indicatives CIQUAL 2020 /100g)
+INSERT INTO public.ciqual_foods (code, food_name, calories, protein_g, carbs_g, fat_g, fiber_g, food_group) VALUES
+  ('cq_riz_blanc_cuit',    'Riz blanc cuit',                130, 2.7, 28.0, 0.3, 0.6, 'Féculents'),
+  ('cq_riz_complet_cuit',  'Riz complet cuit',              112, 2.6, 23.0, 0.9, 1.8, 'Féculents'),
+  ('cq_pates_cuites',      'Pâtes cuites',                  131, 5.0, 25.0, 1.1, 1.8, 'Féculents'),
+  ('cq_quinoa_cuit',       'Quinoa cuit',                   120, 4.4, 21.0, 1.9, 2.8, 'Féculents'),
+  ('cq_pomme_terre_cuite', 'Pomme de terre cuite',           87, 2.0, 20.0, 0.1, 1.8, 'Féculents'),
+  ('cq_pain_complet',      'Pain complet',                  247, 13.0, 41.0, 3.4, 7.0, 'Féculents'),
+  ('cq_baguette',          'Pain (baguette)',               271, 9.0, 55.0, 1.3, 3.0, 'Féculents'),
+  ('cq_flocons_avoine',    'Flocons d''avoine',             389, 17.0, 66.0, 7.0, 10.0, 'Féculents'),
+  ('cq_lentilles_cuites',  'Lentilles cuites',              116, 9.0, 20.0, 0.4, 8.0, 'Légumineuses'),
+  ('cq_poulet_blanc_cuit', 'Blanc de poulet cuit',          165, 31.0, 0.0, 3.6, 0.0, 'Viandes'),
+  ('cq_steak_hache_5',     'Steak haché 5% MG cuit',        137, 21.0, 0.0, 5.0, 0.0, 'Viandes'),
+  ('cq_oeuf',              'Œuf entier',                    143, 12.6, 0.7, 9.5, 0.0, 'Œufs'),
+  ('cq_saumon',            'Saumon cuit',                   208, 20.0, 0.0, 13.0, 0.0, 'Poissons'),
+  ('cq_thon_naturel',      'Thon au naturel',               116, 26.0, 0.0, 1.0, 0.0, 'Poissons'),
+  ('cq_yaourt_nature',     'Yaourt nature',                  61, 3.5, 4.7, 3.3, 0.0, 'Produits laitiers'),
+  ('cq_fromage_blanc_0',   'Fromage blanc 0%',               47, 8.0, 4.0, 0.2, 0.0, 'Produits laitiers'),
+  ('cq_lait_demi',         'Lait demi-écrémé',               47, 3.3, 4.8, 1.6, 0.0, 'Produits laitiers'),
+  ('cq_beurre',            'Beurre',                        717, 0.9, 0.1, 81.0, 0.0, 'Matières grasses'),
+  ('cq_huile_olive',       'Huile d''olive',                884, 0.0, 0.0, 100.0, 0.0, 'Matières grasses'),
+  ('cq_amandes',           'Amandes',                       579, 21.0, 22.0, 50.0, 12.0, 'Fruits à coque'),
+  ('cq_banane',            'Banane',                         89, 1.1, 23.0, 0.3, 2.6, 'Fruits'),
+  ('cq_pomme',             'Pomme',                          52, 0.3, 14.0, 0.2, 2.4, 'Fruits'),
+  ('cq_avocat',            'Avocat',                        160, 2.0, 9.0, 15.0, 7.0, 'Fruits'),
+  ('cq_tomate',            'Tomate',                         18, 0.9, 3.9, 0.2, 1.2, 'Légumes'),
+  ('cq_brocoli_cuit',      'Brocoli cuit',                   35, 2.4, 7.0, 0.4, 3.3, 'Légumes')
+ON CONFLICT (code) DO NOTHING;

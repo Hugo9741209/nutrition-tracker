@@ -156,6 +156,19 @@ export function checkGoalSafety({ tdee, targetCalories, gender, weight_kg, prote
   return { ok: violations.length === 0, violations }
 }
 
+// Scaling des nutriments : les bases (CIQUAL/OFF) donnent des valeurs /100g.
+// On scale toujours à la quantité réelle ici (logique, pas dans l'UI brute).
+export function scaleNutrients(per100g, quantityG) {
+  const r = quantityG / 100
+  return {
+    calories:  Math.round((per100g.calories ?? 0) * r),
+    protein_g: +((per100g.protein_g ?? 0) * r).toFixed(1),
+    carbs_g:   +((per100g.carbs_g ?? 0) * r).toFixed(1),
+    fat_g:     +((per100g.fat_g ?? 0) * r).toFixed(1),
+    fiber_g:   +((per100g.fiber_g ?? 0) * r).toFixed(1),
+  }
+}
+
 export function formatDate(date = new Date()) {
   return date.toISOString().split('T')[0]
 }
