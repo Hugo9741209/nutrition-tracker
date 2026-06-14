@@ -1,32 +1,30 @@
 import { useState, useRef } from 'react'
-import { Search, Loader2, Plus, X } from 'lucide-react'
+import { Search, Loader2, Plus, X, ShieldCheck, Info } from 'lucide-react'
+// Recherche d'aliments = intégration sources externes → module backend.
+// On consomme la forme normalisée, on ne refait ni le fetch ni le scaling.
+import { searchFoods, toLogEntry, RELIABILITY_LABELS } from '../../lib/foods'
 
-async function searchOpenFoodFacts(query) {
-  const url = `https://world.openfoodfacts.org/cgi/search.pl?search_terms=${encodeURIComponent(query)}&json=1&page_size=8&fields=product_name,brands,nutriments,serving_size`
-  const res = await fetch(url)
-  const json = await res.json()
-  return (json.products ?? []).filter(p => p.product_name && p.nutriments?.energy_100g !== undefined)
-}
-
-function getNutriments(p, qty = 100) {
-  const n = p.nutriments
-  const factor = qty / 100
-  return {
-    food_name: p.product_name,
-    brand: p.brands ?? '',
-    quantity_g: qty,
-    calories: Math.round((n['energy-kcal_100g'] ?? n.energy_100g / 4.184 ?? 0) * factor),
-    protein_g: +((n.proteins_100g ?? 0) * factor).toFixed(1),
-    carbs_g:   +((n.carbohydrates_100g ?? 0) * factor).toFixed(1),
-    fat_g:     +((n.fat_100g ?? 0) * factor).toFixed(1),
-    fiber_g:   +((n.fiber_100g ?? 0) * factor).toFixed(1),
-  }
+// Badge de fiabilité de la source (transparence demandée au script §4/§5).
+function SourceBadge({ reliability }) {
+  const high = reliability === 'high'
+  const Icon = high ? ShieldCheck : Info
+  return (
+    <span
+      title={RELIABILITY_LABELS[reliability]}
+      className={`inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded-md shrink-0 ${
+        high ? 'bg-green-500/15 text-green-400' : 'bg-amber-500/15 text-amber-400'
+      }`}
+    >
+      <Icon size={10} /> {high ? 'CIQUAL' : 'OFF'}
+    </span>
+  )
 }
 
 export default function FoodSearch({ mealType, onAdd, onClose }) {
-  const [query, setQuery]     = useState('')
-  const [results, setResults] = useState([])
-  const [loading, setLoading] = useState(false)
+  const [query, setQuery]       = useState('')
+  const [results, setResults]   = useState([])
+  const [loading, setLoading]   = useState(false)
+  const [searched, setSearched] = useState(false)
   const [selected, setSelected] = useState(null)
   const [qty, setQty] = useState(100)
   const [custom, setCustom] = useState({ food_name: '', calories: '', protein_g: '', carbs_g: '', fat_g: '', quantity_g: 100 })
@@ -36,23 +34,26 @@ export default function FoodSearch({ mealType, onAdd, onClose }) {
   function handleQuery(val) {
     setQuery(val)
     clearTimeout(timer.current)
-    if (val.length < 2) { setResults([]); return }
+    if (val.length < 2) { setResults([]); setSearched(false); return }
+    // Debounce 300 ms (script §5) pour ne pas spammer CIQUAL/OFF.
     timer.current = setTimeout(async () => {
       setLoading(true)
-      const res = await searchOpenFoodFacts(val)
+      const res = await searchFoods(val)
       setResults(res)
+      setSearched(true)
       setLoading(false)
-    }, 500)
+    }, 300)
   }
 
-  function handleSelect(product) {
-    setSelected(product)
+  function handleSelect(food) {
+    setSelected(food)
     setQty(100)
   }
 
   function handleAdd() {
     if (!selected) return
-    onAdd({ ...getNutriments(selected, qty), meal_type: mealType })
+    // Le scaling /100g → quantité est fait côté backend (toLogEntry).
+    onAdd(toLogEntry(selected, qty, mealType))
     onClose()
   }
 
@@ -72,7 +73,7 @@ export default function FoodSearch({ mealType, onAdd, onClose }) {
     onClose()
   }
 
-  const nutriments = selected ? getNutriments(selected, qty) : null
+  const preview = selected ? toLogEntry(selected, qty, mealType) : null
 
   return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-end md:items-center justify-center p-4">
@@ -91,7 +92,7 @@ export default function FoodSearch({ mealType, onAdd, onClose }) {
               onClick={() => setTab(t)}
               className={`flex-1 py-2.5 text-sm font-medium transition-colors ${tab === t ? 'text-green-400 border-b-2 border-green-400' : 'text-slate-400'}`}
             >
-              {t === 'search' ? 'Recherche OpenFoodFacts' : 'Saisie manuelle'}
+              {t === 'search' ? 'Recherche' : 'Saisie manuelle'}
             </button>
           ))}
         </div>
@@ -113,14 +114,24 @@ export default function FoodSearch({ mealType, onAdd, onClose }) {
 
               {/* Results */}
               {loading && <div className="flex justify-center py-6"><Loader2 size={20} className="animate-spin text-green-400" /></div>}
-              {!loading && !selected && results.map((p, i) => (
+
+              {!loading && !selected && searched && results.length === 0 && (
+                <p className="text-slate-500 text-sm text-center py-6">Aucun aliment trouvé pour « {query} ».</p>
+              )}
+
+              {!loading && !selected && results.map((f, i) => (
                 <button
-                  key={i}
-                  onClick={() => handleSelect(p)}
+                  key={`${f.source}-${f.sourceCode ?? i}`}
+                  onClick={() => handleSelect(f)}
                   className="w-full text-left px-3 py-2.5 rounded-xl hover:bg-slate-800 transition-colors mb-1"
                 >
-                  <p className="font-medium text-sm">{p.product_name}</p>
-                  <p className="text-xs text-slate-500">{p.brands} · {Math.round(p.nutriments['energy-kcal_100g'] ?? 0)} kcal/100g</p>
+                  <div className="flex items-center justify-between gap-2">
+                    <p className="font-medium text-sm truncate">{f.food_name}</p>
+                    <SourceBadge reliability={f.reliability} />
+                  </div>
+                  <p className="text-xs text-slate-500">
+                    {f.brand ? `${f.brand} · ` : ''}{f.per100g.calories} kcal/100g
+                  </p>
                 </button>
               ))}
 
@@ -131,20 +142,23 @@ export default function FoodSearch({ mealType, onAdd, onClose }) {
                     ← Retour aux résultats
                   </button>
                   <div className="bg-slate-800 rounded-xl p-4 mb-4">
-                    <p className="font-semibold">{selected.product_name}</p>
-                    <p className="text-xs text-slate-400 mb-3">{selected.brands}</p>
+                    <div className="flex items-center justify-between gap-2">
+                      <p className="font-semibold">{selected.food_name}</p>
+                      <SourceBadge reliability={selected.reliability} />
+                    </div>
+                    <p className="text-xs text-slate-400 mb-3">{selected.brand || RELIABILITY_LABELS[selected.reliability]}</p>
                     <label className="label">Quantité (g)</label>
                     <input
                       type="number" min="1" className="input mb-3"
                       value={qty} onChange={e => setQty(+e.target.value)}
                     />
-                    {nutriments && (
+                    {preview && (
                       <div className="grid grid-cols-4 gap-2 text-center">
                         {[
-                          { label: 'Calories', val: nutriments.calories, unit: 'kcal', color: 'text-green-400' },
-                          { label: 'Protéines', val: nutriments.protein_g, unit: 'g', color: 'text-blue-400' },
-                          { label: 'Glucides', val: nutriments.carbs_g, unit: 'g', color: 'text-orange-400' },
-                          { label: 'Lipides', val: nutriments.fat_g, unit: 'g', color: 'text-purple-400' },
+                          { label: 'Calories', val: preview.calories, unit: 'kcal', color: 'text-green-400' },
+                          { label: 'Protéines', val: preview.protein_g, unit: 'g', color: 'text-blue-400' },
+                          { label: 'Glucides', val: preview.carbs_g, unit: 'g', color: 'text-orange-400' },
+                          { label: 'Lipides', val: preview.fat_g, unit: 'g', color: 'text-purple-400' },
                         ].map(({ label, val, unit, color }) => (
                           <div key={label} className="bg-slate-700 rounded-lg p-2">
                             <p className={`text-sm font-bold ${color}`}>{val}</p>
