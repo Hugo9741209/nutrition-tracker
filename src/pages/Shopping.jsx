@@ -1,9 +1,10 @@
 import { useState } from 'react'
-import { Plus, Trash2, ScanLine, Eraser, ShoppingCart, ReceiptText } from 'lucide-react'
+import { Plus, Trash2, ScanLine, Eraser, ShoppingCart, ReceiptText, Sparkles } from 'lucide-react'
 import { useShoppingList } from '../hooks/useShoppingList'
 import { searchByBarcode } from '../lib/foods'
 import BarcodeScanner from '../components/BarcodeScanner'
 import DriveImport from '../components/DriveImport'
+import { STAPLE_PRODUCTS } from '../components/stapleProducts'
 
 export default function Shopping({ user }) {
   const { items, loading, addItem, addMany, toggleItem, deleteItem, clearChecked } = useShoppingList(user?.id)
@@ -61,6 +62,33 @@ export default function Shopping({ user }) {
         </button>
         {scanMsg && <p className="text-xs text-slate-400">{scanMsg}</p>}
       </form>
+
+      {/* Produits phares — ajout rapide (déduits de l'historique Drive) */}
+      <div className="card">
+        <div className="flex items-center gap-2 mb-3">
+          <Sparkles size={15} className="text-green-400" />
+          <p className="text-sm text-slate-300 font-medium">Mes produits phares</p>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          {STAPLE_PRODUCTS.map(p => {
+            const already = items.some(i => i.label.toLowerCase() === p.label.toLowerCase())
+            return (
+              <button
+                key={p.label}
+                onClick={() => !already && addItem(p.label, p.qty)}
+                disabled={already}
+                className={`text-xs px-3 py-1.5 rounded-full border flex items-center gap-1 transition-colors ${
+                  already
+                    ? 'bg-slate-800 border-slate-700 text-slate-600'
+                    : 'bg-slate-800 border-slate-700 text-slate-300 hover:border-green-500 hover:text-green-400'
+                }`}
+              >
+                {!already && <Plus size={12} />} {p.label}
+              </button>
+            )
+          })}
+        </div>
+      </div>
 
       {/* Liste */}
       {items.length === 0 ? (
