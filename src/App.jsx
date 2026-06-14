@@ -6,6 +6,9 @@ import Layout from './components/Layout'
 import Auth from './pages/Auth'
 import Dashboard from './pages/Dashboard'
 import FoodLog from './pages/FoodLog'
+import Favorites from './pages/Favorites'
+import Shopping from './pages/Shopping'
+import Hydration from './pages/Hydration'
 import Insights from './pages/Insights'
 import WeightTracker from './pages/WeightTracker'
 import Profile from './pages/Profile'
@@ -17,8 +20,11 @@ function AppRoutes({ user }) {
     <Layout>
       <Routes>
         <Route path="/"        element={<Dashboard    user={user} profile={profile} />} />
-        <Route path="/log"      element={<FoodLog      user={user} profile={profile} />} />
-        <Route path="/insights" element={<Insights     user={user} profile={profile} />} />
+        <Route path="/log"       element={<FoodLog      user={user} profile={profile} />} />
+        <Route path="/favorites" element={<Favorites    user={user} profile={profile} />} />
+        <Route path="/shopping"  element={<Shopping     user={user} profile={profile} />} />
+        <Route path="/hydration" element={<Hydration    user={user} profile={profile} />} />
+        <Route path="/insights"  element={<Insights     user={user} profile={profile} />} />
         <Route path="/weight"   element={<WeightTracker user={user} profile={profile} />} />
         <Route path="/profile" element={<Profile      user={user} onProfileSaved={refetch} />} />
         <Route path="*"        element={<Navigate to="/" />} />

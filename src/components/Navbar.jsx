@@ -1,12 +1,15 @@
 import { NavLink } from 'react-router-dom'
-import { LayoutDashboard, UtensilsCrossed, BarChart3, Scale, User } from 'lucide-react'
+import { LayoutDashboard, UtensilsCrossed, Star, ShoppingCart, Droplet, BarChart3, Scale, User } from 'lucide-react'
 
 const links = [
-  { to: '/',         label: 'Dashboard', icon: LayoutDashboard },
-  { to: '/log',      label: 'Repas',     icon: UtensilsCrossed },
-  { to: '/insights', label: 'Bilan',     icon: BarChart3 },
-  { to: '/weight',   label: 'Poids',     icon: Scale },
-  { to: '/profile',  label: 'Profil',    icon: User },
+  { to: '/',          label: 'Dashboard', icon: LayoutDashboard },
+  { to: '/log',       label: 'Repas',     icon: UtensilsCrossed },
+  { to: '/favorites', label: 'Favoris',   icon: Star },
+  { to: '/shopping',  label: 'Courses',   icon: ShoppingCart },
+  { to: '/hydration', label: 'Eau',       icon: Droplet },
+  { to: '/insights',  label: 'Bilan',     icon: BarChart3 },
+  { to: '/weight',    label: 'Poids',     icon: Scale },
+  { to: '/profile',   label: 'Profil',    icon: User },
 ]
 
 export default function Navbar() {
@@ -39,15 +42,15 @@ export default function Navbar() {
         </div>
       </nav>
 
-      {/* Mobile bottom bar */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-slate-900 border-t border-slate-800 flex z-10">
+      {/* Mobile bottom bar — défilable horizontalement (8 onglets) */}
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-slate-900 border-t border-slate-800 flex overflow-x-auto z-10">
         {links.map(({ to, label, icon: Icon }) => (
           <NavLink
             key={to}
             to={to}
             end={to === '/'}
             className={({ isActive }) =>
-              `flex-1 flex flex-col items-center gap-1 py-3 text-xs font-medium transition-colors ${
+              `flex-shrink-0 basis-1/5 flex flex-col items-center gap-1 py-3 text-[11px] font-medium transition-colors ${
                 isActive ? 'text-green-400' : 'text-slate-500'
               }`
             }
