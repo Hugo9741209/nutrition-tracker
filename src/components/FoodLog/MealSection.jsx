@@ -45,6 +45,7 @@ export default function MealSection({ mealType, logs, onAdd, onDelete, onSaveFav
           {mealLogs.length > 0 && onSaveFavorite && (
             <button
               onClick={handleSaveFavorite}
+              aria-label={`Enregistrer ${MEAL_LABELS[mealType]} comme favori`}
               title="Enregistrer ce repas comme favori"
               className={`transition-colors p-1 ${saved ? 'text-green-400' : 'text-slate-400 hover:text-yellow-400'}`}
             >
@@ -53,6 +54,7 @@ export default function MealSection({ mealType, logs, onAdd, onDelete, onSaveFav
           )}
           <button
             onClick={e => { e.stopPropagation(); setShowSearch(true) }}
+            aria-label={`Ajouter un aliment au ${MEAL_LABELS[mealType]}`}
             className="text-slate-400 hover:text-green-400 transition-colors p-1"
           >
             <Plus size={18} />
@@ -82,7 +84,8 @@ export default function MealSection({ mealType, logs, onAdd, onDelete, onSaveFav
                 <span className="text-sm font-semibold text-white">{Math.round(log.calories)} kcal</span>
                 <button
                   onClick={() => onDelete(log.id)}
-                  className="opacity-0 group-hover:opacity-100 text-slate-500 hover:text-red-400 transition-all"
+                  aria-label={`Supprimer ${log.food_name}`}
+                  className="opacity-0 group-hover:opacity-100 focus:opacity-100 text-slate-500 hover:text-red-400 transition-all"
                 >
                   <Trash2 size={14} />
                 </button>

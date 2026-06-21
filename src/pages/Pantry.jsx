@@ -138,11 +138,11 @@ export default function Pantry({ user }) {
                 </p>
               </div>
               {it.per100g && (
-                <button onClick={() => setEating(it)} title="J'en ai mangé" className="text-slate-400 hover:text-green-400 p-1.5 shrink-0">
+                <button onClick={() => setEating(it)} aria-label={`J'en ai mangé : ${it.label}`} title="J'en ai mangé" className="text-slate-400 hover:text-green-400 p-1.5 shrink-0">
                   <Utensils size={16} />
                 </button>
               )}
-              <button onClick={() => remove(it.id)} className="text-slate-600 hover:text-red-400 p-1.5 shrink-0">
+              <button onClick={() => remove(it.id)} aria-label={`Retirer ${it.label} du stock`} className="text-slate-600 hover:text-red-400 p-1.5 shrink-0">
                 <Trash2 size={15} />
               </button>
             </div>

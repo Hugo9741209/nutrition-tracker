@@ -195,19 +195,28 @@ export default function Insights({ user, profile }) {
               <Flame size={16} className="text-green-400" />
               <p className="text-slate-400 text-sm">Calories — 7 derniers jours</p>
             </div>
-            <ResponsiveContainer width="100%" height={160}>
-              <BarChart data={history} barSize={20}>
-                <XAxis dataKey="date" tickFormatter={d => d.slice(5)} tick={{ fill: '#64748b', fontSize: 11 }} axisLine={false} tickLine={false} />
-                <YAxis hide />
-                <Tooltip
-                  cursor={{ fill: '#1e293b' }}
-                  contentStyle={{ background: '#1e293b', border: '1px solid #334155', borderRadius: 12, fontSize: 12 }}
-                  formatter={v => [`${Math.round(v)} kcal`, 'Calories']}
-                />
-                {target && <ReferenceLine y={target} stroke="#22c55e" strokeDasharray="3 3" strokeOpacity={0.5} />}
-                <Bar dataKey="calories" fill="#22c55e" opacity={0.8} radius={[4, 4, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
+            <div role="img" aria-label={`Calories des ${history.length} derniers jours${target ? `, objectif ${target} kcal` : ''}`}>
+              <ResponsiveContainer width="100%" height={160}>
+                <BarChart data={history} barSize={20}>
+                  <XAxis dataKey="date" tickFormatter={d => d.slice(5)} tick={{ fill: '#64748b', fontSize: 11 }} axisLine={false} tickLine={false} />
+                  <YAxis hide />
+                  <Tooltip
+                    cursor={{ fill: '#1e293b' }}
+                    contentStyle={{ background: '#1e293b', border: '1px solid #334155', borderRadius: 12, fontSize: 12 }}
+                    formatter={v => [`${Math.round(v)} kcal`, 'Calories']}
+                  />
+                  {target && <ReferenceLine y={target} stroke="#22c55e" strokeDasharray="3 3" strokeOpacity={0.5} />}
+                  <Bar dataKey="calories" fill="#22c55e" opacity={0.8} radius={[4, 4, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+            <table className="sr-only">
+              <caption>Calories par jour{target ? `, objectif ${target} kcal` : ''}</caption>
+              <thead><tr><th>Date</th><th>Calories</th></tr></thead>
+              <tbody>
+                {history.map(d => <tr key={d.date}><td>{d.date}</td><td>{Math.round(d.calories)} kcal</td></tr>)}
+              </tbody>
+            </table>
           </div>
         </>
       )}

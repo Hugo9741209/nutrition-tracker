@@ -46,7 +46,7 @@ export default function Favorites({ user }) {
                   <p className="font-semibold flex items-center gap-2"><Star size={15} className="text-green-400" /> {t.name}</p>
                   <p className="text-xs text-slate-500 mt-0.5">{(t.items ?? []).length} aliment{(t.items ?? []).length > 1 ? 's' : ''} · {templateKcal(t)} kcal</p>
                 </div>
-                <button onClick={() => deleteTemplate(t.id)} className="text-slate-500 hover:text-red-400 transition-colors p-1">
+                <button onClick={() => deleteTemplate(t.id)} aria-label={`Supprimer le favori ${t.name}`} className="text-slate-500 hover:text-red-400 transition-colors p-1">
                   <Trash2 size={16} />
                 </button>
               </div>

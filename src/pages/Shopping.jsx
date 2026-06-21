@@ -106,6 +106,8 @@ export default function Shopping({ user }) {
               <div key={item.id} className="flex items-center gap-3 py-2.5 first:pt-0 last:pb-0">
                 <button
                   onClick={() => toggleItem(item.id)}
+                  aria-label={item.checked ? `Décocher ${item.label}` : `Cocher ${item.label}`}
+                  aria-pressed={item.checked}
                   className={`w-5 h-5 rounded-md border flex items-center justify-center shrink-0 ${item.checked ? 'bg-green-500 border-green-500' : 'border-slate-600'}`}
                 >
                   {item.checked && <span className="text-slate-900 text-xs font-bold">✓</span>}
@@ -114,7 +116,7 @@ export default function Shopping({ user }) {
                   <span className="text-sm">{item.label}</span>
                   {item.qty && <span className="text-xs text-slate-500 ml-2">{item.qty}</span>}
                 </div>
-                <button onClick={() => deleteItem(item.id)} className="text-slate-600 hover:text-red-400 transition-colors p-1 shrink-0">
+                <button onClick={() => deleteItem(item.id)} aria-label={`Supprimer ${item.label}`} className="text-slate-600 hover:text-red-400 transition-colors p-1 shrink-0">
                   <Trash2 size={15} />
                 </button>
               </div>

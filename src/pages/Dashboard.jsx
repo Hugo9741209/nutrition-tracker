@@ -163,15 +163,27 @@ export default function Dashboard({ user, profile }) {
         {history.length === 0 ? (
           <p className="text-slate-600 text-sm text-center py-6">Commence à logger tes repas pour voir les données</p>
         ) : (
-          <ResponsiveContainer width="100%" height={160}>
-            <BarChart data={history} barSize={16}>
-              <XAxis dataKey="date" tickFormatter={d => d.slice(5)} tick={{ fill: '#64748b', fontSize: 11 }} axisLine={false} tickLine={false} />
-              <YAxis hide />
-              <Tooltip content={<CustomTooltip />} cursor={{ fill: '#1e293b' }} />
-              <ReferenceLine y={targetCal} stroke="#22c55e" strokeDasharray="3 3" strokeOpacity={0.5} />
-              <Bar dataKey="calories" fill="#22c55e" opacity={0.8} radius={[4, 4, 0, 0]} />
-            </BarChart>
-          </ResponsiveContainer>
+          <>
+            <div role="img" aria-label={`Calories des ${history.length} derniers jours, objectif ${targetCal} kcal`}>
+              <ResponsiveContainer width="100%" height={160}>
+                <BarChart data={history} barSize={16}>
+                  <XAxis dataKey="date" tickFormatter={d => d.slice(5)} tick={{ fill: '#64748b', fontSize: 11 }} axisLine={false} tickLine={false} />
+                  <YAxis hide />
+                  <Tooltip content={<CustomTooltip />} cursor={{ fill: '#1e293b' }} />
+                  <ReferenceLine y={targetCal} stroke="#22c55e" strokeDasharray="3 3" strokeOpacity={0.5} />
+                  <Bar dataKey="calories" fill="#22c55e" opacity={0.8} radius={[4, 4, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+            {/* Alternative textuelle pour lecteurs d'écran */}
+            <table className="sr-only">
+              <caption>Calories par jour, objectif {targetCal} kcal</caption>
+              <thead><tr><th>Date</th><th>Calories</th></tr></thead>
+              <tbody>
+                {history.map(d => <tr key={d.date}><td>{d.date}</td><td>{Math.round(d.calories)} kcal</td></tr>)}
+              </tbody>
+            </table>
+          </>
         )}
       </div>
 

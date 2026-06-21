@@ -57,13 +57,13 @@ export default function Hydration({ user, profile }) {
 
         <div className="flex items-center gap-5">
           <button
-            onClick={() => increment(-1)} disabled={glasses === 0}
+            onClick={() => increment(-1)} disabled={glasses === 0} aria-label="Retirer un verre"
             className="w-12 h-12 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center text-white disabled:opacity-40 hover:bg-slate-700 transition-colors"
           >
             <Minus size={20} />
           </button>
           <button
-            onClick={() => increment(1)}
+            onClick={() => increment(1)} aria-label="Ajouter un verre"
             className="w-16 h-16 rounded-full bg-cyan-500/20 border border-cyan-500 flex items-center justify-center text-cyan-300 hover:bg-cyan-500/30 transition-colors"
           >
             <Plus size={26} />
