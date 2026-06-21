@@ -35,10 +35,10 @@ Deno.serve(async (req) => {
     let accessToken = row.access_token
     if (row.expires_at && row.expires_at * 1000 <= Date.now()) {
       const r = await fetch('https://www.strava.com/oauth/token', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          client_id: Deno.env.get('STRAVA_CLIENT_ID'),
-          client_secret: Deno.env.get('STRAVA_CLIENT_SECRET'),
+        method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({
+          client_id: Deno.env.get('STRAVA_CLIENT_ID')!,
+          client_secret: Deno.env.get('STRAVA_CLIENT_SECRET')!,
           grant_type: 'refresh_token', refresh_token: row.refresh_token,
         }),
       })

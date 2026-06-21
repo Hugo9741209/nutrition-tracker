@@ -27,10 +27,10 @@ Deno.serve(async (req) => {
     // Échange code → tokens chez Strava.
     const res = await fetch('https://www.strava.com/oauth/token', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        client_id: Deno.env.get('STRAVA_CLIENT_ID'),
-        client_secret: Deno.env.get('STRAVA_CLIENT_SECRET'),
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({
+        client_id: Deno.env.get('STRAVA_CLIENT_ID')!,
+        client_secret: Deno.env.get('STRAVA_CLIENT_SECRET')!,
         code,
         grant_type: 'authorization_code',
       }),
