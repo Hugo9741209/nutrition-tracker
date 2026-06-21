@@ -2,8 +2,7 @@ import { useState } from 'react'
 import { Star, Trash2, Plus, Check } from 'lucide-react'
 import { useMealTemplates } from '../hooks/useMealTemplates'
 import { todayStr } from '../lib/nutrition'
-
-const MEALS = { breakfast: 'Petit-déj', lunch: 'Déjeuner', dinner: 'Dîner', snack: 'Collation' }
+import { MEAL_LABELS_SHORT as MEALS } from '../components/format'
 
 function templateKcal(t) {
   return Math.round((t.items ?? []).reduce((s, it) => s + (it.calories ?? 0), 0))

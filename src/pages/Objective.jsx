@@ -6,15 +6,10 @@ import { useFoodHistory } from '../hooks/useFoodLogs'
 import { analyzeObjective } from '../lib/objective'
 import { GOAL_LABELS } from '../lib/nutrition'
 import { inRange, PROTEIN_ENDURANCE_RANGE } from '../components/nutritionDisplay'
+import { fmtDate, RECO_COLOR } from '../components/format'
 import SafetyBanner from '../components/SafetyBanner'
 
 const METHOD_LABELS = { katch_mcardle: 'Katch-McArdle (masse maigre)', mifflin_st_jeor: 'Mifflin-St Jeor' }
-
-function fmtDate(iso) {
-  return new Date(iso + 'T00:00:00').toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })
-}
-
-const RECO_COLOR = { success: 'text-green-400', warn: 'text-amber-400', warning: 'text-amber-400', info: 'text-slate-300' }
 
 export default function Objective({ user, profile, onValidated }) {
   const { saveProfile } = useProfile(user?.id)

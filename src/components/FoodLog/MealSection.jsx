@@ -1,19 +1,13 @@
 import { useState } from 'react'
 import { Plus, Trash2, ChevronDown, ChevronUp, Star, Check } from 'lucide-react'
 import FoodSearch from './FoodSearch'
+import { MEAL_LABELS } from '../format'
 
 const MEAL_COLORS = {
   breakfast: 'text-yellow-400',
   lunch:     'text-green-400',
   dinner:    'text-blue-400',
   snack:     'text-purple-400',
-}
-
-const MEAL_LABELS = {
-  breakfast: 'Petit-déjeuner',
-  lunch:     'Déjeuner',
-  dinner:    'Dîner',
-  snack:     'Collation',
 }
 
 export default function MealSection({ mealType, logs, onAdd, onDelete, onSaveFavorite }) {

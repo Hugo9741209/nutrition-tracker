@@ -6,10 +6,7 @@ import { useInsights } from '../hooks/useInsights'
 import { projectWeightGoal, computePeriodSummary } from '../lib/insights'
 import { generateRecommendations } from '../lib/coach'
 import { perKg, inRange, PROTEIN_ENDURANCE_RANGE, CARBS_REST_RANGE } from '../components/nutritionDisplay'
-
-function fmtDate(iso) {
-  return new Date(iso + 'T00:00:00').toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })
-}
+import { fmtDate, RECO_COLOR } from '../components/format'
 
 // Régularité de saisie — cadrage bienveillant, sans punition.
 function regularite(n) {
@@ -18,8 +15,6 @@ function regularite(n) {
   if (n >= 1) return { txt: 'Bon début, continue 🌱', c: 'text-cyan-400' }
   return { txt: 'On démarre quand tu veux', c: 'text-slate-400' }
 }
-
-const RECO_COLOR = { success: 'text-green-400', warn: 'text-amber-400', warning: 'text-amber-400', info: 'text-slate-300' }
 
 const TolPct = 0.10 // ±10% = "dans la cible"
 

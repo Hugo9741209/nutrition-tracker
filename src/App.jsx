@@ -1,27 +1,38 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, lazy, Suspense } from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { supabase } from './lib/supabase'
 import { useProfile } from './hooks/useProfile'
 import Layout from './components/Layout'
 import Auth from './pages/Auth'
-import Dashboard from './pages/Dashboard'
-import Objective from './pages/Objective'
-import FoodLog from './pages/FoodLog'
-import Favorites from './pages/Favorites'
-import Shopping from './pages/Shopping'
-import Pantry from './pages/Pantry'
-import Hydration from './pages/Hydration'
-import Health from './pages/Health'
-import StravaCallback from './pages/StravaCallback'
-import Insights from './pages/Insights'
-import WeightTracker from './pages/WeightTracker'
-import Profile from './pages/Profile'
+
+// Code-splitting : chaque page est chargée à la demande (bundle initial allégé).
+const Dashboard      = lazy(() => import('./pages/Dashboard'))
+const Objective      = lazy(() => import('./pages/Objective'))
+const FoodLog        = lazy(() => import('./pages/FoodLog'))
+const Favorites      = lazy(() => import('./pages/Favorites'))
+const Shopping       = lazy(() => import('./pages/Shopping'))
+const Pantry         = lazy(() => import('./pages/Pantry'))
+const Hydration      = lazy(() => import('./pages/Hydration'))
+const Health         = lazy(() => import('./pages/Health'))
+const StravaCallback = lazy(() => import('./pages/StravaCallback'))
+const Insights       = lazy(() => import('./pages/Insights'))
+const WeightTracker  = lazy(() => import('./pages/WeightTracker'))
+const Profile        = lazy(() => import('./pages/Profile'))
+
+function PageLoader() {
+  return (
+    <div className="flex justify-center pt-24" role="status" aria-label="Chargement">
+      <div className="w-6 h-6 border-2 border-green-500 border-t-transparent rounded-full animate-spin" />
+    </div>
+  )
+}
 
 function AppRoutes({ user }) {
   const { profile, refetch } = useProfile(user?.id)
 
   return (
     <Layout>
+      <Suspense fallback={<PageLoader />}>
       <Routes>
         <Route path="/"          element={<Dashboard    user={user} profile={profile} />} />
         <Route path="/objective" element={<Objective    user={user} profile={profile} onValidated={refetch} />} />
@@ -37,6 +48,7 @@ function AppRoutes({ user }) {
         <Route path="/profile" element={<Profile      user={user} onProfileSaved={refetch} />} />
         <Route path="*"        element={<Navigate to="/" />} />
       </Routes>
+      </Suspense>
     </Layout>
   )
 }

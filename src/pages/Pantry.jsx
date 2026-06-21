@@ -5,9 +5,8 @@ import { todayStr, scaleNutrients } from '../lib/nutrition'
 import { matchFoodByName } from '../lib/foodMatch'
 import { useLocalPantry } from '../components/pantryStore'
 import { suggestRecipes } from '../components/recipeSuggest'
+import { MEAL_LABELS_SHORT as MEALS } from '../components/format'
 import DriveImport from '../components/DriveImport'
-
-const MEALS = { breakfast: 'Petit-déj', lunch: 'Déjeuner', dinner: 'Dîner', snack: 'Collation' }
 
 // Modale "j'en ai mangé" : portion + repas → log au journal du jour.
 function EatModal({ item, onClose, onConfirm }) {
