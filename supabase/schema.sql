@@ -192,3 +192,30 @@ CREATE POLICY "own_water_select" ON public.water_logs FOR SELECT USING (auth.uid
 CREATE POLICY "own_water_insert" ON public.water_logs FOR INSERT WITH CHECK (auth.uid() = user_id);
 CREATE POLICY "own_water_update" ON public.water_logs FOR UPDATE USING (auth.uid() = user_id);
 CREATE POLICY "own_water_delete" ON public.water_logs FOR DELETE USING (auth.uid() = user_id);
+
+-- ============================================
+-- Strava — tokens OAuth (1 par user) + activités synchronisées
+-- ============================================
+CREATE TABLE IF NOT EXISTS public.strava_tokens (
+  user_id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
+  access_token TEXT, refresh_token TEXT, expires_at BIGINT, athlete_id BIGINT,
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+ALTER TABLE public.strava_tokens ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "own_strava_tok" ON public.strava_tokens FOR ALL
+  USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
+
+CREATE TABLE IF NOT EXISTS public.strava_activities (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  strava_id BIGINT NOT NULL,
+  name TEXT, type TEXT,
+  distance_km NUMERIC, duration_min INTEGER, calories NUMERIC,
+  activity_date DATE,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  UNIQUE(user_id, strava_id)
+);
+CREATE INDEX IF NOT EXISTS idx_strava_act_user ON public.strava_activities (user_id, activity_date);
+ALTER TABLE public.strava_activities ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "own_strava_act" ON public.strava_activities FOR ALL
+  USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
