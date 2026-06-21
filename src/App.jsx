@@ -5,6 +5,7 @@ import { useProfile } from './hooks/useProfile'
 import Layout from './components/Layout'
 import Auth from './pages/Auth'
 import Dashboard from './pages/Dashboard'
+import Objective from './pages/Objective'
 import FoodLog from './pages/FoodLog'
 import Favorites from './pages/Favorites'
 import Shopping from './pages/Shopping'
@@ -20,7 +21,8 @@ function AppRoutes({ user }) {
   return (
     <Layout>
       <Routes>
-        <Route path="/"        element={<Dashboard    user={user} profile={profile} />} />
+        <Route path="/"          element={<Dashboard    user={user} profile={profile} />} />
+        <Route path="/objective" element={<Objective    user={user} profile={profile} onValidated={refetch} />} />
         <Route path="/log"       element={<FoodLog      user={user} profile={profile} />} />
         <Route path="/favorites" element={<Favorites    user={user} profile={profile} />} />
         <Route path="/shopping"  element={<Shopping     user={user} profile={profile} />} />
