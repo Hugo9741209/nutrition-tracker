@@ -3,6 +3,7 @@ import { Search, Loader2, Plus, X, ShieldCheck, Info } from 'lucide-react'
 // Recherche d'aliments = intégration sources externes → module backend.
 // On consomme la forme normalisée, on ne refait ni le fetch ni le scaling.
 import { searchFoods, toLogEntry, RELIABILITY_LABELS } from '../../lib/foods'
+import { useEscape, backdropClose } from '../modal'
 
 // Badge de fiabilité de la source (transparence demandée au script §4/§5).
 function SourceBadge({ reliability }) {
@@ -30,6 +31,7 @@ export default function FoodSearch({ mealType, onAdd, onClose }) {
   const [custom, setCustom] = useState({ food_name: '', calories: '', protein_g: '', carbs_g: '', fat_g: '', quantity_g: 100 })
   const [tab, setTab] = useState('search')
   const timer = useRef(null)
+  useEscape(onClose)
 
   function handleQuery(val) {
     setQuery(val)
@@ -76,8 +78,8 @@ export default function FoodSearch({ mealType, onAdd, onClose }) {
   const preview = selected ? toLogEntry(selected, qty, mealType) : null
 
   return (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-end md:items-center justify-center p-4">
-      <div className="bg-slate-900 border border-slate-700 rounded-2xl w-full max-w-lg max-h-[85vh] flex flex-col">
+    <div onClick={backdropClose(onClose)} className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-end md:items-center justify-center p-4">
+      <div role="dialog" aria-modal="true" aria-label="Ajouter un aliment" className="bg-slate-900 border border-slate-700 rounded-2xl w-full max-w-lg max-h-[85vh] flex flex-col">
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-slate-800">
           <h3 className="font-semibold">Ajouter un aliment</h3>

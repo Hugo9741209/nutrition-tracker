@@ -6,16 +6,18 @@ import { matchFoodByName } from '../lib/foodMatch'
 import { useLocalPantry } from '../components/pantryStore'
 import { suggestRecipes } from '../components/recipeSuggest'
 import { MEAL_LABELS_SHORT as MEALS } from '../components/format'
+import { useEscape, backdropClose } from '../components/modal'
 import DriveImport from '../components/DriveImport'
 
 // Modale "j'en ai mangé" : portion + repas → log au journal du jour.
 function EatModal({ item, onClose, onConfirm }) {
   const [grams, setGrams] = useState(100)
   const [meal, setMeal] = useState('lunch')
+  useEscape(onClose)
   const preview = scaleNutrients(item.per100g, +grams || 0)
   return (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-end md:items-center justify-center p-4">
-      <div className="bg-slate-900 border border-slate-700 rounded-2xl w-full max-w-sm p-4 space-y-3">
+    <div onClick={backdropClose(onClose)} className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-end md:items-center justify-center p-4">
+      <div role="dialog" aria-modal="true" aria-label={item.ciqualName || item.label} className="bg-slate-900 border border-slate-700 rounded-2xl w-full max-w-sm p-4 space-y-3">
         <div className="flex items-center justify-between">
           <h3 className="font-semibold text-sm">{item.ciqualName || item.label}</h3>
           <button onClick={onClose} className="text-slate-400 hover:text-white"><X size={18} /></button>

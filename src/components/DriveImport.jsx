@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { X, ClipboardPaste, Check, ShoppingCart, Loader2 } from 'lucide-react'
 import { parseDriveOrder } from './driveParser'
 import { matchFoodByName } from '../lib/foodMatch'
+import { useEscape, backdropClose } from './modal'
 
 // Import d'un ticket / confirmation de commande Drive Super U → liste de courses.
 // L'utilisateur colle le texte de l'email ; on reconnaît les produits côté front.
@@ -10,6 +11,7 @@ export default function DriveImport({ onClose, onConfirm, confirmLabel = 'Ajoute
   const [items, setItems] = useState(null)      // null tant qu'on n'a pas parsé
   const [picked, setPicked] = useState({})       // index -> bool
   const [matching, setMatching] = useState(false)
+  useEscape(onClose)
 
   async function handleParse() {
     const parsed = parseDriveOrder(raw)
@@ -34,8 +36,8 @@ export default function DriveImport({ onClose, onConfirm, confirmLabel = 'Ajoute
   }
 
   return (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-end md:items-center justify-center p-4">
-      <div className="bg-slate-900 border border-slate-700 rounded-2xl w-full max-w-lg max-h-[88vh] flex flex-col">
+    <div onClick={backdropClose(onClose)} className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-end md:items-center justify-center p-4">
+      <div role="dialog" aria-modal="true" aria-label="Importer un ticket Drive" className="bg-slate-900 border border-slate-700 rounded-2xl w-full max-w-lg max-h-[88vh] flex flex-col">
         <div className="flex items-center justify-between p-4 border-b border-slate-800">
           <h3 className="font-semibold flex items-center gap-2"><ShoppingCart size={18} className="text-green-400" /> Importer un ticket Drive</h3>
           <button onClick={onClose} className="text-slate-400 hover:text-white"><X size={20} /></button>
