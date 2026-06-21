@@ -1,4 +1,5 @@
-import { NavLink } from 'react-router-dom'
+import { useEffect, useRef } from 'react'
+import { NavLink, useLocation } from 'react-router-dom'
 import { LayoutDashboard, Target, UtensilsCrossed, Star, ShoppingCart, Boxes, Droplet, Activity, BarChart3, Scale, User } from 'lucide-react'
 
 const links = [
@@ -16,6 +17,15 @@ const links = [
 ]
 
 export default function Navbar() {
+  const { pathname } = useLocation()
+  const mobileNav = useRef(null)
+
+  // Barre mobile (11 onglets) : garde l'onglet actif visible au changement de route.
+  useEffect(() => {
+    const active = mobileNav.current?.querySelector('[aria-current="page"]')
+    active?.scrollIntoView({ inline: 'center', block: 'nearest', behavior: 'smooth' })
+  }, [pathname])
+
   return (
     <>
       {/* Desktop sidebar */}
@@ -45,8 +55,8 @@ export default function Navbar() {
         </div>
       </nav>
 
-      {/* Mobile bottom bar — défilable horizontalement (8 onglets) */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-slate-900 border-t border-slate-800 flex overflow-x-auto z-10">
+      {/* Mobile bottom bar — défilable horizontalement, onglet actif centré */}
+      <nav ref={mobileNav} className="md:hidden fixed bottom-0 left-0 right-0 bg-slate-900 border-t border-slate-800 flex overflow-x-auto z-10">
         {links.map(({ to, label, icon: Icon }) => (
           <NavLink
             key={to}

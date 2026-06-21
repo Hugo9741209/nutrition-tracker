@@ -1,9 +1,10 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { BarChart2, TrendingUp, TrendingDown, Minus, ArrowRight, Footprints, Moon } from 'lucide-react'
+import { BarChart2, TrendingUp, TrendingDown, Minus, ArrowRight, Footprints, Moon, Droplet, Plus } from 'lucide-react'
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, ReferenceLine } from 'recharts'
 import { useFoodLogs, useFoodHistory } from '../hooks/useFoodLogs'
 import { useWeightLogs } from '../hooks/useWeightLogs'
+import { useWaterLog } from '../hooks/useWaterLog'
 import CalorieBar from '../components/Dashboard/CalorieBar'
 import MacroRings from '../components/Dashboard/MacroRings'
 import RecalibrateBanner from '../components/Dashboard/RecalibrateBanner'
@@ -40,6 +41,10 @@ export default function Dashboard({ user, profile }) {
 
   const targetCal = profile?.target_calories ?? 2500
   const name = profile?.name ?? user?.email?.split('@')[0] ?? 'Toi'
+
+  // Hydratation : cible sur le poids (~35 ml/kg, 250 ml/verre), quick-add sur le home.
+  const waterTarget = weightKg ? Math.max(4, Math.round(weightKg * 35 / 250)) : 8
+  const { glasses, target: wTarget, increment: addWater } = useWaterLog(user?.id, undefined, waterTarget)
 
   const DiffIcon = diff === null ? Minus : diff > 0 ? TrendingUp : TrendingDown
   const diffColor = diff === null ? 'text-slate-400' : profile?.goal === 'lose_weight'
@@ -153,6 +158,21 @@ export default function Dashboard({ user, profile }) {
           : profile}
         dayType={adj.isTrainingDay ? 'run' : dayType}
       />
+
+      {/* Hydratation — aperçu + ajout rapide */}
+      <div className="card flex items-center gap-3">
+        <Droplet size={20} className="text-cyan-400 shrink-0" />
+        <div className="flex-1 min-w-0">
+          <p className="text-sm text-slate-300">Hydratation</p>
+          <p className="text-xs text-slate-500">{glasses} / {wTarget} verres</p>
+        </div>
+        <div className="w-20 h-2 bg-slate-800 rounded-full overflow-hidden shrink-0">
+          <div className="h-full bg-cyan-400 rounded-full transition-all duration-500" style={{ width: `${wTarget > 0 ? Math.min(glasses / wTarget * 100, 100) : 0}%` }} />
+        </div>
+        <button onClick={() => addWater(1)} aria-label="Ajouter un verre d'eau" className="w-9 h-9 rounded-full bg-cyan-500/20 border border-cyan-500 flex items-center justify-center text-cyan-300 hover:bg-cyan-500/30 transition-colors shrink-0">
+          <Plus size={18} />
+        </button>
+      </div>
 
       {/* Graphique 14 jours */}
       <div className="card">
