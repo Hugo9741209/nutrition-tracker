@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { supabase } from './lib/supabase'
 import { useProfile } from './hooks/useProfile'
 import Layout from './components/Layout'
+import ErrorBoundary from './components/ErrorBoundary'
 import Auth from './pages/Auth'
 
 // Code-splitting : chaque page est chargée à la demande (bundle initial allégé).
@@ -78,7 +79,9 @@ export default function App() {
 
   return (
     <BrowserRouter>
-      {user ? <AppRoutes user={user} /> : <Auth />}
+      <ErrorBoundary>
+        {user ? <AppRoutes user={user} /> : <Auth />}
+      </ErrorBoundary>
     </BrowserRouter>
   )
 }
