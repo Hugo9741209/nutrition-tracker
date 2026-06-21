@@ -1,5 +1,5 @@
 import { NavLink } from 'react-router-dom'
-import { LayoutDashboard, Target, UtensilsCrossed, Star, ShoppingCart, Boxes, Droplet, BarChart3, Scale, User } from 'lucide-react'
+import { LayoutDashboard, Target, UtensilsCrossed, Star, ShoppingCart, Boxes, Droplet, Activity, BarChart3, Scale, User } from 'lucide-react'
 
 const links = [
   { to: '/',          label: 'Dashboard', icon: LayoutDashboard },
@@ -9,6 +9,7 @@ const links = [
   { to: '/shopping',  label: 'Courses',   icon: ShoppingCart },
   { to: '/pantry',    label: 'Stock',     icon: Boxes },
   { to: '/hydration', label: 'Eau',       icon: Droplet },
+  { to: '/health',    label: 'Santé',     icon: Activity },
   { to: '/insights',  label: 'Bilan',     icon: BarChart3 },
   { to: '/weight',    label: 'Poids',     icon: Scale },
   { to: '/profile',   label: 'Profil',    icon: User },

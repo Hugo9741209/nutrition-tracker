@@ -11,6 +11,8 @@ import Favorites from './pages/Favorites'
 import Shopping from './pages/Shopping'
 import Pantry from './pages/Pantry'
 import Hydration from './pages/Hydration'
+import Health from './pages/Health'
+import StravaCallback from './pages/StravaCallback'
 import Insights from './pages/Insights'
 import WeightTracker from './pages/WeightTracker'
 import Profile from './pages/Profile'
@@ -28,6 +30,8 @@ function AppRoutes({ user }) {
         <Route path="/shopping"  element={<Shopping     user={user} profile={profile} />} />
         <Route path="/pantry"    element={<Pantry       user={user} profile={profile} />} />
         <Route path="/hydration" element={<Hydration    user={user} profile={profile} />} />
+        <Route path="/health"    element={<Health       user={user} profile={profile} />} />
+        <Route path="/strava/callback" element={<StravaCallback user={user} />} />
         <Route path="/insights"  element={<Insights     user={user} profile={profile} />} />
         <Route path="/weight"   element={<WeightTracker user={user} profile={profile} />} />
         <Route path="/profile" element={<Profile      user={user} onProfileSaved={refetch} />} />
