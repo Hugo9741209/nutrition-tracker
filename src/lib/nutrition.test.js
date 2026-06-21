@@ -14,6 +14,7 @@ import {
   checkGoalSafety,
   tdeeRange,
   SAFETY,
+  recommendTargets,
 } from './nutrition.js'
 
 describe('calcBMR (Mifflin-St Jeor)', () => {
@@ -139,5 +140,25 @@ describe('SAFETY : seuils sourcés', () => {
     expect(SAFETY.minKcalFemale).toBe(1200)
     expect(SAFETY.minProteinGPerKg).toBe(0.83)
     expect(SAFETY.maxDeficitKcal).toBe(500)
+  })
+})
+
+describe('recommendTargets : calcul auto des objectifs', () => {
+  const profile = { current_weight_kg: 80, height_cm: 180, age: 20, gender: 'male', activity_level: 'very_active', goal: 'lose_weight' }
+  it('dérive calories + macros depuis les indicateurs (rien saisi)', () => {
+    const r = recommendTargets(profile)
+    expect(r.ready).toBe(true)
+    expect(r.targetCalories).toBeGreaterThan(0)
+    expect(r.macros.protein_g).toBeGreaterThan(0)
+    expect(r.method).toBe('mifflin_st_jeor')
+    expect(r.range.low).toBeLessThan(r.tdee)
+  })
+  it('utilise Katch-McArdle si % masse grasse fourni', () => {
+    expect(recommendTargets({ ...profile, body_fat_pct: 12 }).method).toBe('katch_mcardle')
+  })
+  it('signale les indicateurs manquants', () => {
+    const r = recommendTargets({ age: 20 })
+    expect(r.ready).toBe(false)
+    expect(r.missing).toContain('poids')
   })
 })

@@ -157,6 +157,42 @@ export function checkGoalSafety({ tdee, targetCalories, gender, weight_kg, prote
   return { ok: violations.length === 0, violations }
 }
 
+// ===========================================================================
+//  CALCUL AUTOMATIQUE DES OBJECTIFS — source de vérité de l'onglet Objectif.
+//  L'utilisateur ne saisit JAMAIS ses calories : il fournit ses indicateurs,
+//  tout est dérivé des formules scientifiques (Mifflin/Katch + ISSN + ANSES).
+//  Accepte weight_kg OU current_weight_kg (forme réelle du profil).
+// ===========================================================================
+export function recommendTargets(profile = {}) {
+  const weight_kg = profile.weight_kg ?? profile.current_weight_kg
+  const p = { ...profile, weight_kg }
+
+  if (!weight_kg || !p.height_cm || p.age == null || !p.gender || !p.goal) {
+    return { ready: false, missing: ['poids', 'taille', 'âge', 'sexe', 'objectif'] }
+  }
+
+  const { value: bmr, method, marginPct } = computeBMR(p)
+  const tdee = Math.round(bmr * (ACTIVITY_MULTIPLIERS[p.activity_level] ?? 1.55))
+  const targetCalories = calcTargetCalories(tdee, p.goal)
+  const macros = calcMacros(targetCalories, p.goal, weight_kg)
+
+  return {
+    ready: true,
+    bmr: Math.round(bmr),
+    tdee,
+    range: tdeeRange(tdee),       // fourchette ±10% (honnêteté)
+    method,                       // mifflin_st_jeor | katch_mcardle
+    marginPct,                    // incertitude à afficher
+    neatWarning: true,            // le multiplicateur d'activité = grosse incertitude
+    blindSpot: detectBlindSpot(p),
+    targetCalories,               // ← calculé, jamais saisi
+    macros,                       // { protein_g, carbs_g, fat_g } calculés
+    safety: checkGoalSafety({
+      tdee, targetCalories, gender: p.gender, weight_kg, protein_g: macros.protein_g,
+    }),
+  }
+}
+
 // Scaling des nutriments : les bases (CIQUAL/OFF) donnent des valeurs /100g.
 // On scale toujours à la quantité réelle ici (logique, pas dans l'UI brute).
 export function scaleNutrients(per100g, quantityG) {
