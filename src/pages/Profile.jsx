@@ -6,6 +6,7 @@ import { tdeeFromProfile, computeBMR, calcTargetCalories, calcMacros, tdeeRange,
 // Helpers d'affichage = domaine frontend.
 import { perKg, inRange, PROTEIN_ENDURANCE_RANGE, CARBS_TRAIN_RANGE } from '../components/nutritionDisplay'
 import SafetyBanner from '../components/SafetyBanner'
+import ExportData from '../components/ExportData'
 import { LogOut, Zap, Target, Calculator } from 'lucide-react'
 
 export default function Profile({ user, onProfileSaved }) {
@@ -222,6 +223,8 @@ export default function Profile({ user, onProfileSaved }) {
           {saving ? 'Sauvegarde...' : 'Sauvegarder le profil'}
         </button>
       </form>
+
+      <ExportData user={user} />
     </div>
   )
 }

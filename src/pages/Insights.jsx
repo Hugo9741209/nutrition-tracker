@@ -3,7 +3,7 @@ import { TrendingUp, TrendingDown, Minus, Target, Flame } from 'lucide-react'
 import { useFoodHistory } from '../hooks/useFoodLogs'
 import { useWeightLogs } from '../hooks/useWeightLogs'
 import { useInsights } from '../hooks/useInsights'
-import { projectWeightGoal } from '../lib/insights'
+import { projectWeightGoal, computePeriodSummary } from '../lib/insights'
 import { generateRecommendations } from '../lib/coach'
 import { perKg, inRange, PROTEIN_ENDURANCE_RANGE, CARBS_REST_RANGE } from '../components/nutritionDisplay'
 
@@ -35,12 +35,19 @@ function StatCard({ label, value, sub, color = 'text-white' }) {
 
 export default function Insights({ user, profile }) {
   const { history } = useFoodHistory(user?.id, 7)
+  const { history: history30 } = useFoodHistory(user?.id, 30)
   const { diff, latest } = useWeightLogs(user?.id, 7)
+  const { logs: weight30 } = useWeightLogs(user?.id, 30)
   const { insights } = useInsights(user?.id, {
     targets: { calories: profile?.target_calories, protein_g: profile?.target_protein_g },
     days: 7,
   })
   const recos = generateRecommendations({ profile: profile ?? {}, insights, water: null })
+  const monthly = computePeriodSummary(
+    history30.map(d => ({ logged_date: d.date, calories: d.calories, protein_g: d.protein_g, carbs_g: d.carbs_g, fat_g: d.fat_g })),
+    weight30,
+    { targets: { calories: profile?.target_calories, protein_g: profile?.target_protein_g } },
+  )
 
   const days = history.length
   const target = profile?.target_calories ?? null
@@ -208,6 +215,25 @@ export default function Insights({ user, profile }) {
             </ResponsiveContainer>
           </div>
         </>
+      )}
+
+      {/* Bilan mensuel */}
+      {monthly.daysLogged > 0 && (
+        <div className="card">
+          <p className="text-sm text-slate-300 font-medium mb-3">Bilan du mois (30 jours)</p>
+          <div className="grid grid-cols-2 gap-3 text-sm">
+            <div><p className="text-xs text-slate-500">Jours suivis</p><p className="font-bold text-white">{monthly.daysLogged}</p></div>
+            {monthly.avgScore != null && <div><p className="text-xs text-slate-500">Score moyen</p><p className="font-bold text-green-400">{monthly.avgScore}/100</p></div>}
+            <div><p className="text-xs text-slate-500">Calories moy./j</p><p className="font-bold text-white">{monthly.avgCalories}</p></div>
+            <div><p className="text-xs text-slate-500">Jours dans la cible</p><p className="font-bold text-green-400">{monthly.daysInTarget}/{monthly.daysLogged}</p></div>
+          </div>
+          {monthly.weightDelta && (
+            <p className="text-xs text-slate-400 mt-3">
+              Poids : {monthly.weightDelta.from} → {monthly.weightDelta.to} kg
+              <span className={monthly.weightDelta.deltaKg < 0 ? 'text-green-400' : 'text-slate-300'}> ({monthly.weightDelta.deltaKg > 0 ? '+' : ''}{monthly.weightDelta.deltaKg} kg)</span>
+            </p>
+          )}
+        </div>
       )}
     </div>
   )
