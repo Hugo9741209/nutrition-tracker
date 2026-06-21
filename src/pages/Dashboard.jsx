@@ -9,6 +9,7 @@ import MacroRings from '../components/Dashboard/MacroRings'
 import RecalibrateBanner from '../components/Dashboard/RecalibrateBanner'
 import ScoreGauge from '../components/Dashboard/ScoreGauge'
 import { dailyBalanceScore } from '../lib/score'
+import { runEnergyKcal, adjustTargetsForRun } from '../lib/training'
 import { todayStr, GOAL_LABELS } from '../lib/nutrition'
 
 const CustomTooltip = ({ active, payload, label }) => {
@@ -28,6 +29,14 @@ export default function Dashboard({ user, profile }) {
 
   // Affichage seulement : type de jour → bande de référence glucides (§7). Aucun tracking de séance.
   const [dayType, setDayType] = useState('rest')
+  // Course du jour : ajuste les cibles nutritionnelles (carburant), affichage seul.
+  const [runKm, setRunKm] = useState('')
+  const weightKg = profile?.current_weight_kg ? +profile.current_weight_kg : null
+  const exerciseKcal = (runKm && weightKg) ? runEnergyKcal({ weightKg, distanceKm: +runKm }) : 0
+  const adj = adjustTargetsForRun(
+    { targetCalories: profile?.target_calories ?? 2500, macros: { protein_g: profile?.target_protein_g ?? 0, carbs_g: profile?.target_carbs_g ?? 0, fat_g: profile?.target_fat_g ?? 0 } },
+    exerciseKcal,
+  )
 
   const targetCal = profile?.target_calories ?? 2500
   const name = profile?.name ?? user?.email?.split('@')[0] ?? 'Toi'
@@ -76,8 +85,32 @@ export default function Dashboard({ user, profile }) {
         return <ScoreGauge score={score} label={label} />
       })()}
 
-      {/* Calories */}
-      <CalorieBar consumed={totals.calories} target={targetCal} />
+      {/* J'ai couru aujourd'hui → ajuste les cibles du jour (carburant) */}
+      <div className="card space-y-2">
+        <div className="flex items-center gap-2">
+          <Footprints size={15} className="text-green-400" />
+          <p className="text-sm text-slate-300 font-medium">J'ai couru aujourd'hui ?</p>
+        </div>
+        <div className="flex items-center gap-2">
+          <input
+            type="number" min="0" step="0.5" className="input w-28" placeholder="km"
+            value={runKm} onChange={e => setRunKm(e.target.value)}
+          />
+          <span className="text-sm text-slate-400">km</span>
+          {exerciseKcal > 0 && (
+            <span className="ml-auto text-sm text-green-400 font-medium">+{exerciseKcal} kcal dépensées</span>
+          )}
+        </div>
+        {adj.isTrainingDay && (
+          <p className="text-xs text-slate-500">
+            Cibles du jour majorées : <span className="text-green-400">+{adj.extra.carbs_g}g glucides</span>, +{adj.extra.protein_g}g protéines, +{adj.extra.fat_g}g lipides.
+            {!weightKg && ' (renseigne ton poids dans le profil pour l\'estimation)'}
+          </p>
+        )}
+      </div>
+
+      {/* Calories — cible ajustée si tu as couru */}
+      <CalorieBar consumed={totals.calories} target={adj.targetCalories} />
 
       {/* Rappel de recalibrage si l'objectif est ancien ou le poids a dérivé */}
       <RecalibrateBanner profile={profile} latestWeight={latest?.weight_kg} />
@@ -112,8 +145,14 @@ export default function Dashboard({ user, profile }) {
         </div>
       )}
 
-      {/* Macros */}
-      <MacroRings totals={totals} profile={profile} dayType={dayType} />
+      {/* Macros — cibles ajustées les jours de course */}
+      <MacroRings
+        totals={totals}
+        profile={adj.isTrainingDay
+          ? { ...profile, target_protein_g: adj.macros.protein_g, target_carbs_g: adj.macros.carbs_g, target_fat_g: adj.macros.fat_g }
+          : profile}
+        dayType={adj.isTrainingDay ? 'run' : dayType}
+      />
 
       {/* Graphique 14 jours */}
       <div className="card">
