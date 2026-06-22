@@ -41,6 +41,18 @@ export function activityEnergyKcal(activity = {}, { weightKg } = {}) {
   }
 }
 
+// Énergie "active" d'une journée, pondérée par la FIABILITÉ : on compte 100% de
+// la course (fiable) mais seulement une fraction de la muscu (estimation peu
+// fiable) pour ne pas surévaluer ce qu'on peut "manger en plus" un jour chargé.
+export function activeEnergyForDay(activities = [], { weightKg, strengthFactor = 0.5 } = {}) {
+  let kcal = 0
+  for (const a of activities) {
+    const e = activityEnergyKcal(a, { weightKg })
+    kcal += e.type === 'course' ? e.kcal : Math.round(e.kcal * strengthFactor)
+  }
+  return kcal
+}
+
 // Dépense hebdomadaire agrégée par type, avec moyenne/jour et avertissement fiabilité.
 //   activities : tableau d'activités de la période (ex. 7 jours)
 export function weeklyExpenditure(activities = [], { weightKg, days = 7 } = {}) {

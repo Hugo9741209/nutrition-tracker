@@ -1,5 +1,17 @@
 import { describe, it, expect } from 'vitest'
-import { activityEnergyKcal, weeklyExpenditure } from './health.js'
+import { activityEnergyKcal, weeklyExpenditure, activeEnergyForDay } from './health.js'
+
+describe('activeEnergyForDay (pondéré par fiabilité)', () => {
+  it('course à 100%, muscu à 50% (estimation prudente)', () => {
+    const acts = [
+      { type: 'Run', distanceKm: 10 },             // 824 (fiable, 100%)
+      { type: 'WeightTraining', durationMin: 60 }, // ~420 → 50% ≈ 210
+    ]
+    const kcal = activeEnergyForDay(acts, { weightKg: 80 })
+    expect(kcal).toBeGreaterThan(824)   // course incluse en entier
+    expect(kcal).toBeLessThan(824 + 420) // muscu décotée
+  })
+})
 
 describe('activityEnergyKcal', () => {
   it('course → fiable, via distance', () => {
